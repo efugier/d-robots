@@ -12,14 +12,13 @@ Robot::Robot(const QString &fifoName, const QString& name) : m_name(name)
 {
     const char* fifo = fifoName.toStdString().c_str();
 
-    mkfifo(fifo, FIFO_PERMISSION);
+    mkfifo(fifo, 0666);
 
     m_fifoFd = open(fifo, O_WRONLY);
 
     if (m_fifoFd < 0)
         std::cerr << "[" << m_name.toStdString() << "] " << "Fifo error : " <<  strerror(m_fifoFd) << std::endl;
-
-    *this << "Bonjour";
+    std::cerr << "[" << m_name.toStdString() << "] " << "Fifo openned" << std::endl;
 }
 
 Robot::~Robot()
@@ -37,7 +36,7 @@ Robot::Robot(Robot &&move) : m_name(std::move(move.m_name)), m_fifoFd(move.m_fif
 void Robot::operator<<(const std::string &message)
 {
     if (m_fifoFd > 0)
-        write(m_fifoFd, message.c_str(), message.size() + 1);
+        write(m_fifoFd, (message + '\n').c_str(), message.size() + 1);
     else
         std::cerr << "[" << m_name.toStdString() << "] " << "Fifo not opened" << std::endl;
 }
