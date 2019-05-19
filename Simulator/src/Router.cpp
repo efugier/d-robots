@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <QVector2D>
+#include <QTextStream>
 
 // To use mkfifo and open/write/close
 #include <fcntl.h>
@@ -21,13 +22,16 @@ std::string cRead(int fd)
     char c;
     std::string ret = "";
     do {
-        read(fd, &c, 1);
-        ret.push_back(c);
+        if (read(fd, &c, sizeof(char)) > 0)
+        {
+            if (c != '\n')
+                ret.push_back(c);
+        }
     } while (c != '\n');
     return ret;
 }
 
-float distance(const QVector2D& pos1, const QVector2D& pos2)
+double distance(const QVector2D& pos1, const QVector2D& pos2)
 {
     return std::sqrt(std::pow(pos1.x() - pos2.x(), 2) + std::pow(pos1.y() - pos2.y(), 2));
 }
@@ -36,15 +40,16 @@ void Router::listen(const QString &fifoName)
 {
     const char* fifo = fifoName.toStdString().c_str();
 
-    mkfifo(fifo, 666);
+    mkfifo(fifo, 0666);
 
-    m_fifoFd = open(fifo, O_WRONLY);
+    m_fifoFd = open(fifo, O_RDONLY);
 
     if (m_fifoFd < 0)
     {
         std::cerr << "[ Router ] " << "Fifo error : " <<  strerror(m_fifoFd) << std::endl;
         return;
     }
+    std::cerr << "[ Router ] " << "Fifo openned" << std::endl;
     while (m_listen)
     {
         std::string message = cRead(m_fifoFd);
@@ -55,7 +60,7 @@ void Router::listen(const QString &fifoName)
          */
 
         QVector2D pos(0,0);
-        QString name = "robot1";
+        QString name = "Robot 1";
 
         if (m_robotList)
         {
