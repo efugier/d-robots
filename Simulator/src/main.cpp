@@ -12,8 +12,8 @@ int main(int argc, char** argv)
     app.setApplicationName("Simulateur");
 
     std::shared_ptr<RobotsHandler> robotList(new RobotsHandler);
-    robotList->createRobot("Robot 1", "robot1");
-    robotList->createRobot("Robot 2", "robot2");
+    robotList->createRobotAsync("Robot 1", "robot1");
+    robotList->createRobotAsync("Robot 2", "robot2");
 
     Router router(robotList);
 
