@@ -12,6 +12,7 @@ Robot::Robot(const QString &fifoName, const QString& name) : m_name(name)
 {
     const char* fifo = fifoName.toStdString().c_str();
 
+    std::cerr << "[" << m_name.toStdString() << "] " << "Opening fifo" << std::endl;
     mkfifo(fifo, 0666);
 
     m_fifoFd = open(fifo, O_WRONLY);
