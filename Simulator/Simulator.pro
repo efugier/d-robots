@@ -6,9 +6,17 @@ SOURCES += \
     src/main.cpp \
     src/Router.cpp \
     src/Robot.cpp \
-    src/RobotsHandler.cpp
+    src/RobotsHandler.cpp \
+    src/mainwindow.cpp
 
 HEADERS += \
     src/Router.hpp \
     src/Robot.hpp \
-    src/RobotsHandler.hpp
+    src/RobotsHandler.hpp \
+    src/mainwindow.h \
+    src/tester.h
+
+DISTFILES +=
+
+RESOURCES += \
+    ressources.qrc

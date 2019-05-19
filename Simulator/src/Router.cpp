@@ -53,7 +53,7 @@ void Router::listen(const QString &fifoName)
     while (m_listen)
     {
         std::string message = cRead(m_fifoFd);
-        std::cerr << "Receive message : " << message << std::endl;
+        std::cerr << "Received message : " << message << std::endl;
 
         /*
          * TODO : Extraction position et identifiant
