@@ -7,6 +7,8 @@
 #include <QGraphicsView>
 #include <QGraphicsItem>
 
+#include "RobotsHandler.hpp"
+
 /** \class MainWindow
  * \brief Simulation window
  *
@@ -32,12 +34,15 @@ class MainWindow : public QMainWindow
     std::unordered_map<std::string,QGraphicsPixmapItem*> robots;
     QPixmap *robotPm;
 
+    std::shared_ptr<RobotsHandler> m_robotList;
+
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    void updateRobotPosition(std::string id, double x, double y);
+    explicit MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent = nullptr);
+
+public slots:
+    void updateRobotPosition(const std::string& id);
     void addObject(double x, double y);
 
-signals:
 
 };
 

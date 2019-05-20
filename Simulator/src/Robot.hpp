@@ -2,7 +2,6 @@
 
 #include <fstream>
 
-#include <QString>
 #include <QVector2D>
 
 #define FIFO_PERMISSION 0666
@@ -10,7 +9,7 @@
 class Robot
 {
 public:
-    Robot(const QString& fifoName, const QString &name);
+    Robot(const std::string& fifoName, const std::string &name);
     ~Robot();
 
     Robot(Robot&& move);
@@ -24,7 +23,7 @@ public:
     void setPosition(const QVector2D& position) { m_position = position;}
 
 private:
-    QString m_name;
+    std::string m_name;
     int m_fifoFd = 0;
 
     float m_range = 10;

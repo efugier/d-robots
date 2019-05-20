@@ -33,7 +33,7 @@ private slots:
             std::cerr << "Object added at " << x << "," << y << std::endl;
         }
         else{
-            main_w->updateRobotPosition("Robot"+std::to_string(counter),x,y);
+            //main_w->updateRobotPosition("Robot"+std::to_string(counter),x,y);
             std::cerr << "Robot added at " << x << "," << y << std::endl;
             counter = counter == 4 ? 0 : counter+1;
         }

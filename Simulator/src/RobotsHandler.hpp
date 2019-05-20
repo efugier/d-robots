@@ -5,6 +5,8 @@
 #include <memory>
 #include <thread>
 
+#include <QObject>
+
 #include "Robot.hpp"
 
 class Robot;
@@ -15,17 +17,17 @@ public:
     RobotsHandler();
     ~RobotsHandler();
 
-    Robot* createRobot(const QString& name, QString fifoName = "");
-    void createRobotAsync(const QString& name, QString fifoName = "", std::function<void(Robot*)> callback = {});
+    Robot* createRobot(const std::string& name, std::string fifoName = "");
+    void createRobotAsync(const std::string& name, std::string fifoName = "", std::function<void(Robot*)> callback = {});
 
-    const Robot* getRobot(const QString& name) const;
-    Robot* getRobot(const QString& name);
+    const Robot* getRobot(const std::string &name) const;
+    Robot* getRobot(const std::string& name);
 
-    std::map<const QString, Robot>::iterator begin() { return m_robotList.begin(); }
-    std::map<const QString, Robot>::iterator end() { return m_robotList.end(); }
+    std::map<const std::string, Robot>::iterator begin() { return m_robotList.begin(); }
+    std::map<const std::string, Robot>::iterator end() { return m_robotList.end(); }
 private:
-    void createRobotAsyncThread(const QString& name, QString fifoName = "", std::function<void(Robot*)> callback = {});
-    std::map<const QString, Robot> m_robotList;
+    void createRobotAsyncThread(const std::string& name, std::string fifoName = "", std::function<void(Robot*)> callback = {});
+    std::map<const std::string, Robot> m_robotList;
 
     std::vector<std::shared_ptr<std::thread>> m_threadList;
 

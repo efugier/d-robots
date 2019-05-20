@@ -2,7 +2,8 @@
 #include <iostream>
 #include <QString>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent) :
+    QMainWindow(parent), m_robotList(robotList)
 {
     setMinimumSize(500,500);
     scene = new QGraphicsScene(this);
@@ -18,19 +19,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
 
 // Adds or moves on the map the robot with given id
-void MainWindow::updateRobotPosition(std::string id, double x, double y){
-    if(robots.end() == robots.find(id)){
-        robots[id] = scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation));
-        robots[id]->setVisible(true);
+void MainWindow::updateRobotPosition(const std::string& id)
+{
+    if (Robot* robot = m_robotList->getRobot(id))
+    {
+        if(robots.end() == robots.find(id)){
+            robots[id] = scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation));
+            robots[id]->setVisible(true);
+        }
+        robots[id]->setX(robot->position().x());
+        robots[id]->setY(robot->position().y());
+        robots[id]->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
+        view->fitInView(scene->sceneRect().x(),
+                        scene->sceneRect().y(),
+                        std::max(scene->sceneRect().width(),MIN_SCENE_WIDTH),
+                        std::max(scene->sceneRect().height(),MIN_SCENE_HEIGHT),
+                        Qt::KeepAspectRatio);
     }
-    robots[id]->setX(x);
-    robots[id]->setY(y);
-    robots[id]->setToolTip(QString::fromStdString(id+" : "+std::to_string(x)+","+std::to_string(y)));
-    view->fitInView(scene->sceneRect().x(),
-                    scene->sceneRect().y(),
-                    std::max(scene->sceneRect().width(),MIN_SCENE_WIDTH),
-                    std::max(scene->sceneRect().height(),MIN_SCENE_HEIGHT),
-                    Qt::KeepAspectRatio);
 }
 
 // Adds an object on the map

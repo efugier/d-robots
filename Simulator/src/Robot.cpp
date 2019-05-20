@@ -8,18 +8,18 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-Robot::Robot(const QString &fifoName, const QString& name) : m_name(name)
+Robot::Robot(const std::string &fifoName, const std::string& name) : m_name(name)
 {
-    const char* fifo = fifoName.toStdString().c_str();
+    const char* fifo = fifoName.c_str();
 
-    std::cerr << "[" << m_name.toStdString() << "] " << "Opening fifo" << std::endl;
+    std::cerr << "[" << m_name << "] " << "Opening fifo" << std::endl;
     mkfifo(fifo, 0666);
 
     m_fifoFd = open(fifo, O_WRONLY);
 
     if (m_fifoFd < 0)
-        std::cerr << "[" << m_name.toStdString() << "] " << "Fifo error : " <<  strerror(m_fifoFd) << std::endl;
-    std::cerr << "[" << m_name.toStdString() << "] " << "Fifo openned" << std::endl;
+        std::cerr << "[" << m_name << "] " << "Fifo error : " <<  strerror(m_fifoFd) << std::endl;
+    std::cerr << "[" << m_name << "] " << "Fifo openned" << std::endl;
 }
 
 Robot::~Robot()
@@ -39,5 +39,5 @@ void Robot::operator<<(const std::string &message)
     if (m_fifoFd > 0)
         write(m_fifoFd, (message + '\n').c_str(), message.size() + 1);
     else
-        std::cerr << "[" << m_name.toStdString() << "] " << "Fifo not opened" << std::endl;
+        std::cerr << "[" << m_name << "] " << "Fifo not opened" << std::endl;
 }
