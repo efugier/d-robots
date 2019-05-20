@@ -17,7 +17,7 @@ Router::Router(std::shared_ptr<RobotsHandler> robotList) :
 
 }
 
-std::string cRead(int fd)
+std::string Router::cRead(int fd)
 {
     char c;
     std::string ret = "";
@@ -27,6 +27,8 @@ std::string cRead(int fd)
             if (c != '\n')
                 ret.push_back(c);
         }
+        if (!m_listen)
+            return {};
     } while (c != '\n');
     return ret;
 }
@@ -50,9 +52,11 @@ void Router::listen(const QString &fifoName)
         return;
     }
     std::cerr << "[ Router ] " << "Fifo openned" << std::endl;
-    while (m_listen)
+    while (true)
     {
         std::string message = cRead(m_fifoFd);
+        if (!m_listen)
+            break;
         std::cerr << "Received message : " << message << std::endl;
 
         /*
@@ -75,16 +79,18 @@ void Router::listen(const QString &fifoName)
                         {
                             it.second << message;
                         }
-
                     }
                 }
             }
-
         }
-
     }
 
 
     close(m_fifoFd);
 
+}
+
+void Router::stop()
+{
+    m_listen = false;
 }

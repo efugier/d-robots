@@ -28,5 +28,9 @@ int main(int argc, char** argv)
 
     std::thread listener(&Router::listen,&router,"simulIn");
 
-    return app.exec();
+    int ret = app.exec();
+
+    router.stop();
+    listener.join();
+    return ret;
 }
