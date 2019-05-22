@@ -83,12 +83,13 @@ void Router::listen(const std::string &fifoName)
             std::cerr << "Field 'pos' does not contains doubles x and/or y" << std::endl;
             continue;
         }
-        QVector2D pos(jsonPos["x"].toDouble(),jsonPos["x"].toDouble());
+        QVector2D pos(jsonPos["x"].toDouble(),jsonPos["y"].toDouble());
 
         // Extract identifiant
         if (!jsonObj.contains("id") || !jsonObj["id"].isDouble())
         {
             std::cerr << "There is not a 'id' field in the message" << std::endl;
+            continue;
         }
         std::string name = "Robot " + std::to_string(jsonObj["id"].toInt());
 
