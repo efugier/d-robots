@@ -19,4 +19,8 @@ HEADERS += \
 DISTFILES +=
 
 RESOURCES += \
-    ressources.qrc
+	ressources.qrc
+
+DEFINES += \
+	"ROBOT_APP=\\\"$$_PRO_FILE_PWD_/../robot/target/debug/robot\\\"" \
+	"RUST_PARAMS=\\\"RUST_LOG=robot=trace\\\""

@@ -19,17 +19,21 @@ MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent
 
 
 // Adds or moves on the map the robot with given id
-void MainWindow::updateRobotPosition(const std::string& id)
+void MainWindow::updateRobotPosition(unsigned int id)
 {
+    if (!m_robotList)
+        return;
     if (Robot* robot = m_robotList->getRobot(id))
     {
-        if(robots.end() == robots.find(id)){
-            robots[id] = scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation));
-            robots[id]->setVisible(true);
+        if (!robot->pixmapItem())
+        {
+            robot->setPixmapItem(scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation)));
+            robot->pixmapItem()->setVisible(true);
         }
-        robots[id]->setX(robot->position().x());
-        robots[id]->setY(robot->position().y());
-        robots[id]->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
+
+        robot->pixmapItem()->setX(robot->position().x());
+        robot->pixmapItem()->setY(robot->position().y());
+        robot->pixmapItem()->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
         view->fitInView(scene->sceneRect().x(),
                         scene->sceneRect().y(),
                         std::max(scene->sceneRect().width(),MIN_SCENE_WIDTH),

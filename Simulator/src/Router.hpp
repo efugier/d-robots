@@ -16,7 +16,7 @@ public:
 
     void stop();
 signals:
-    void updateRobotPosition(std::string id);
+    void updateRobotPosition(unsigned int id);
 
 private:
     std::string cRead(int fd);
@@ -24,5 +24,10 @@ private:
     std::shared_ptr<RobotsHandler> m_robotList;
     int m_fifoFd = 0;
     bool m_listen = true;
+
+    static constexpr inline char KEY_SENDER_ID[] = "sender_id";
+    static constexpr inline char KEY_POSITION[] = "pos";
+    static constexpr inline char KEY_X[] = "x";
+    static constexpr inline char KEY_Y[] = "y";
 };
 

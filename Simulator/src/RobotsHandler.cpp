@@ -14,48 +14,48 @@ RobotsHandler::~RobotsHandler()
         t->join();
 }
 
-Robot* RobotsHandler::createRobot(const std::string &name, std::string fifoName)
+Robot* RobotsHandler::createRobot(unsigned int id, std::string fifoName)
 {
-    std::cerr << "[" << name << "] " << "Creating robot" << std::endl;
-    if (m_robotList.count(name) != 0)
-        return &m_robotList.at(name);
+    std::cerr << "[ Robot " << id << " ] " << "Creating robot" << std::endl;
+    if (m_robotList.count(id) != 0)
+        return &m_robotList.at(id);
 
     if (fifoName == "")
-        fifoName = name;
+        fifoName = std::string("robot") + std::to_string(id);
     std::replace(fifoName.begin(), fifoName.end(), ' ', '_');
 
-    m_robotList.emplace(std::pair<std::string, Robot>(name, Robot(fifoName, name)));
+    m_robotList.emplace(std::pair<unsigned int, Robot>(id, Robot(fifoName, id)));
 
-    return &m_robotList.at(name);
+    return &m_robotList.at(id);
 }
 
-void RobotsHandler::createRobotAsync(const std::string &name, std::string fifoName, std::function<void (Robot *)> callback)
+void RobotsHandler::createRobotAsync(unsigned int id, std::string fifoName, std::function<void (Robot *)> callback)
 {
-    m_threadList.push_back(std::shared_ptr<std::thread>(new std::thread(&RobotsHandler::createRobotAsyncThread, this, name, fifoName, callback)));
+    m_threadList.push_back(std::shared_ptr<std::thread>(new std::thread(&RobotsHandler::createRobotAsyncThread, this, id, fifoName, callback)));
 }
 
-const Robot *RobotsHandler::getRobot(const std::string &name) const
+const Robot *RobotsHandler::getRobot(unsigned int id) const
 {
-    if (m_robotList.count(name) == 0)
+    if (m_robotList.count(id) == 0)
         return nullptr;
 
-    return &m_robotList.at(name);
+    return &m_robotList.at(id);
 }
 
-Robot *RobotsHandler::getRobot(const std::string &name)
+Robot *RobotsHandler::getRobot(unsigned int id)
 {
-    if (m_robotList.count(name) == 0)
+    if (m_robotList.count(id) == 0)
         return nullptr;
 
-    return &m_robotList.at(name);
+    return &m_robotList.at(id);
 
 }
 
-void RobotsHandler::createRobotAsyncThread(const std::string &name, std::string fifoName, std::function<void (Robot *)> callback)
+void RobotsHandler::createRobotAsyncThread(unsigned int id, std::string fifoName, std::function<void (Robot *)> callback)
 {
-    std::cerr << "[" << name << "] " << "Starting thread" << std::endl;
+    std::cerr << "[" << id << "] " << "Starting thread" << std::endl;
     if (callback)
-        callback(createRobot(name, fifoName));
+        callback(createRobot(id, fifoName));
     else
-        createRobot(name, fifoName);
+        createRobot(id, fifoName);
 }

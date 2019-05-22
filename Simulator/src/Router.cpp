@@ -72,42 +72,43 @@ void Router::listen(const std::string &fifoName)
         // { "pos":{"x":1,"y":2},"id":1}
 
         // Extract position
-        if (!jsonObj.contains("pos") || !jsonObj["pos"].isObject())
+        if (!jsonObj.contains(KEY_POSITION) || !jsonObj[KEY_POSITION].isObject())
         {
-            std::cerr << "There is not a 'pos' field in the message" << std::endl;
+            std::cerr << "There is not a '" << KEY_POSITION << "' field in the message" << std::endl;
             continue;
         }
-        auto jsonPos = jsonObj["pos"].toObject();
-        if (!jsonPos.contains("x") || !jsonPos.contains("y") || !jsonPos["x"].isDouble() || !jsonPos["y"].isDouble())
+        auto jsonPos = jsonObj[KEY_POSITION].toObject();
+        if (!jsonPos.contains(KEY_X) || !jsonPos.contains(KEY_Y) || !jsonPos[KEY_X].isDouble() || !jsonPos[KEY_Y].isDouble())
         {
-            std::cerr << "Field 'pos' does not contains doubles x and/or y" << std::endl;
+            std::cerr << "Field '" << KEY_POSITION << "' does not contains doubles " << KEY_X << " and/or " << KEY_Y<< std::endl;
             continue;
         }
-        QVector2D pos(jsonPos["x"].toDouble(),jsonPos["y"].toDouble());
+        QVector2D pos(jsonPos[KEY_X].toDouble(),jsonPos[KEY_Y].toDouble());
 
         // Extract identifiant
-        if (!jsonObj.contains("id") || !jsonObj["id"].isDouble())
+        if (!jsonObj.contains(KEY_SENDER_ID) || !jsonObj[KEY_SENDER_ID].isDouble())
         {
-            std::cerr << "There is not a 'id' field in the message" << std::endl;
+            std::cerr << "There is not a " << KEY_SENDER_ID <<" field in the message" << std::endl;
             continue;
         }
-        std::string name = "Robot " + std::to_string(jsonObj["id"].toInt());
+        unsigned int id= jsonObj[KEY_SENDER_ID].toInt();
 
         if (m_robotList)
         {
-            if (Robot* sender = m_robotList->getRobot(name))
+            if (Robot* sender = m_robotList->getRobot(id))
             {
                 sender->setPosition(pos);
-                emit(updateRobotPosition(name));
+                emit(updateRobotPosition(id));
 
                 float range = sender->range();
-                for (auto& it : *m_robotList)
+                for (auto& [rId, r] : *m_robotList)
                 {
-                    if (it.first != name)
+                    if (rId != id)
                     {
-                        if (distance(sender->position(), it.second.position()) < range)
+                        if (distance(sender->position(), r.position()) < range)
                         {
-                            it.second << message;
+                            std::cerr << "Message transmitted to " << rId << std::endl;
+                            r << message;
                         }
                     }
                 }

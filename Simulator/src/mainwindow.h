@@ -31,7 +31,6 @@ class MainWindow : public QMainWindow
 
     QGraphicsScene *scene;
     QGraphicsView *view;
-    std::unordered_map<std::string,QGraphicsPixmapItem*> robots;
     QPixmap *robotPm;
 
     std::shared_ptr<RobotsHandler> m_robotList;
@@ -40,7 +39,7 @@ public:
     explicit MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent = nullptr);
 
 public slots:
-    void updateRobotPosition(const std::string& id);
+    void updateRobotPosition(unsigned int id);
     void addObject(double x, double y);
 
 

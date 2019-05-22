@@ -11,6 +11,7 @@
 
 int main(int argc, char** argv)
 {
+    std::cout << ROBOT_APP << std::endl;
     std::shared_ptr<RobotsHandler> robotList(new RobotsHandler);
 
     QApplication app(argc, argv);
@@ -22,13 +23,17 @@ int main(int argc, char** argv)
     w->show();
     // Generates random robots and objects for testing puroposes
     Tester t(w, 3000);
+    Robot::setSimulationOutFifo("simulIn");
 
-    robotList->createRobotAsync("Robot 1", "robot1");
-    robotList->createRobotAsync("Robot 2", "robot2");
 
     Router router(robotList);
 
-    QObject::connect(&router, SIGNAL(updateRobotPosition(std::string)), w, SLOT(updateRobotPosition(std::string)));
+    QObject::connect(&router, SIGNAL(updateRobotPosition(unsigned int)), w, SLOT(updateRobotPosition(unsigned int)));
+
+    robotList->createRobotAsync(1, "robot1");
+    robotList->createRobotAsync(2, "robot2");
+    robotList->createRobotAsync(3, "robot3");
+    robotList->createRobotAsync(4, "robot4");
 
     std::thread listener(&Router::listen,&router,"simulIn");
 

@@ -17,17 +17,17 @@ public:
     RobotsHandler();
     ~RobotsHandler();
 
-    Robot* createRobot(const std::string& name, std::string fifoName = "");
-    void createRobotAsync(const std::string& name, std::string fifoName = "", std::function<void(Robot*)> callback = {});
+    Robot* createRobot(unsigned int id, std::string fifoName = "");
+    void createRobotAsync(unsigned int id, std::string fifoName = "", std::function<void(Robot*)> callback = {});
 
-    const Robot* getRobot(const std::string &name) const;
-    Robot* getRobot(const std::string& name);
+    const Robot* getRobot(unsigned int id) const;
+    Robot* getRobot(unsigned int id);
 
-    std::map<const std::string, Robot>::iterator begin() { return m_robotList.begin(); }
-    std::map<const std::string, Robot>::iterator end() { return m_robotList.end(); }
+    std::map<unsigned int, Robot>::iterator begin() { return m_robotList.begin(); }
+    std::map<unsigned int, Robot>::iterator end() { return m_robotList.end(); }
 private:
-    void createRobotAsyncThread(const std::string& name, std::string fifoName = "", std::function<void(Robot*)> callback = {});
-    std::map<const std::string, Robot> m_robotList;
+    void createRobotAsyncThread(unsigned int id, std::string fifoName = "", std::function<void(Robot*)> callback = {});
+    std::map<unsigned int, Robot> m_robotList;
 
     std::vector<std::shared_ptr<std::thread>> m_threadList;
 
