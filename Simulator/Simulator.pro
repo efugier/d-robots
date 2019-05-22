@@ -21,6 +21,10 @@ DISTFILES +=
 RESOURCES += \
 	ressources.qrc
 
+isEmpty(ROBOT_APP) {
+ROBOT_APP=$$_PRO_FILE_PWD_/../robot/target/debug/robot
+}
+
 DEFINES += \
-	"ROBOT_APP=\\\"$$_PRO_FILE_PWD_/../robot/target/debug/robot\\\"" \
+	"ROBOT_APP=\\\"$$ROBOT_APP\\\"" \
 	"RUST_PARAMS=\\\"RUST_LOG=robot=trace\\\""
