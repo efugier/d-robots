@@ -1,11 +1,32 @@
-use crate::app::Position;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
+#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct Position {
+    pub x: Distance,
+    pub y: Distance,
+    pub a: Angle,
+}
+
+/// Centimeters
+pub type Distance = usize;
+
+/// Degrees
+pub type Angle = usize;
+
+/// Acceleration
+pub type Acc = usize;
+
 #[derive(Debug)]
 pub enum Event {
-    Collision,
+    Collision(Position),
+    Moved(Distance),
+    Turned(Angle),
+    Reached(Distance, Distance),
+    Curr(Position),
+    Lacc(Vec<Acc>),
 }
 use Event::*;
 
@@ -23,7 +44,17 @@ impl Robot {
         (
             Robot {
                 app_tx,
-                pos: Position { x: 0.0, y: 0.0 },
+                pos: Position::default(),
+            },
+            rx,
+        )
+    }
+    pub fn init(x: Distance, y: Distance, a: Angle) -> (Self, mpsc::Receiver<Event>) {
+        let (app_tx, rx) = mpsc::channel();
+        (
+            Robot {
+                app_tx,
+                pos: Position { x, y, a },
             },
             rx,
         )
@@ -32,7 +63,7 @@ impl Robot {
         self.app_tx.send(event).unwrap();
     }
     // not sure if this deserve its own function
-    // check number of use cases
+    // TODO: check number of use cases in the near future
     #[cfg(debug_assertions)]
     fn send_to_app_delayed(&self, event: Event, delay: Duration) {
         let tx = self.app_tx.clone();
@@ -41,6 +72,26 @@ impl Robot {
             tx.send(event).unwrap();
         });
     }
+    pub fn go_to(x: Distance, y: Distance) {
+        unimplemented!()
+    }
+    pub fn forward(dist: Distance) {
+        unimplemented!()
+    }
+    pub fn turn(angle: Angle) {
+        unimplemented!()
+    }
+    /// return the last 10 acceleration norms
+    pub fn lacc(angle: Angle) {
+        unimplemented!()
+    }
+    /// tune the collision parameters
+    /// `nb_acc_for_mean` the number of acceleration norms used to compute a mean
+    /// `nb_consec_mean` number of consecutive means to be smaller than `mean_threshold`
+    pub fn tune(nb_acc_for_mean: usize, nb_consec_mean: usize, mean_threshold: f32) {
+        unimplemented!()
+    }
+
     /// Conditional compilation demo
     pub fn be_a_robot(&self) {
         #[cfg(debug_assertions)]
@@ -48,7 +99,7 @@ impl Robot {
             let ttl = Duration::from_secs(8);
             println!("I am in debug mode");
             println!("And thus going to kill myself in {:?}", ttl);
-            self.send_to_app_delayed(Collision, ttl);
+            self.send_to_app_delayed(Collision(self.pos.clone()), ttl);
         }
         #[cfg(not(debug_assertions))]
         {
