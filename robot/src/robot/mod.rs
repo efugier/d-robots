@@ -1,27 +1,12 @@
-use serde::{Deserialize, Serialize};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct Position {
-    pub x: Distance,
-    pub y: Distance,
-    pub a: Angle,
-}
-
-/// Centimeters
-pub type Distance = usize;
-
-/// Degrees
-pub type Angle = usize;
-
-/// Acceleration
-pub type Acc = usize;
+use crate::map::{Acc, Angle, Distance, Point, Position};
 
 #[derive(Debug)]
 pub enum Event {
-    Collision(Position),
+    Collision(Point),
     Moved(Distance),
     Turned(Angle),
     Reached(Distance, Distance),
@@ -54,7 +39,10 @@ impl Robot {
         (
             Robot {
                 app_tx,
-                pos: Position { x, y, a },
+                pos: Position {
+                    p: Point { x, y },
+                    a,
+                },
             },
             rx,
         )
@@ -99,7 +87,7 @@ impl Robot {
             let ttl = Duration::from_secs(8);
             println!("I am in debug mode");
             println!("And thus going to kill myself in {:?}", ttl);
-            self.send_to_app_delayed(Collision(self.pos.clone()), ttl);
+            self.send_to_app_delayed(Collision(self.pos.p.clone()), ttl);
         }
         #[cfg(not(debug_assertions))]
         {

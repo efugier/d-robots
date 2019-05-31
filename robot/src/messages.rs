@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::app::AppId;
-use crate::robot::Position;
+use crate::map::Position;
 
 pub type MsgId = u32;
 
