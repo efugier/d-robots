@@ -13,6 +13,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+
+double distance(const QVector2D& pos1, const QVector2D& pos2)
+{
+    return std::sqrt(std::pow(pos1.x() - pos2.x(), 2) + std::pow(pos1.y() - pos2.y(), 2));
+}
+
 Router::Router(std::shared_ptr<RobotsHandler> robotList, QObject* parent) :
     QObject (parent), m_robotList(robotList)
 {
@@ -35,10 +41,63 @@ std::string Router::cRead(int fd)
     return ret;
 }
 
-double distance(const QVector2D& pos1, const QVector2D& pos2)
+void Router::worker(std::string message)
 {
-    return std::sqrt(std::pow(pos1.x() - pos2.x(), 2) + std::pow(pos1.y() - pos2.y(), 2));
+    QJsonDocument messageJson = QJsonDocument::fromJson(QByteArray(message.c_str()));
+
+    if (!messageJson.isObject())
+    {
+        std::cerr << "The message is not an Object" << std::endl;
+        return;
+    }
+    auto jsonObj = messageJson.object();
+    // { "pos":{"x":1,"y":2},"id":1}
+
+    // Extract position
+    if (!jsonObj.contains(KEY_POSITION) || !jsonObj[KEY_POSITION].isObject())
+    {
+        std::cerr << "There is not a '" << KEY_POSITION << "' field in the message" << std::endl;
+        return;
+    }
+    auto jsonPos = jsonObj[KEY_POSITION].toObject();
+    if (!jsonPos.contains(KEY_X) || !jsonPos.contains(KEY_Y) || !jsonPos[KEY_X].isDouble() || !jsonPos[KEY_Y].isDouble())
+    {
+        std::cerr << "Field '" << KEY_POSITION << "' does not contains doubles " << KEY_X << " and/or " << KEY_Y<< std::endl;
+        return;
+    }
+    QVector2D pos(jsonPos[KEY_X].toDouble(),jsonPos[KEY_Y].toDouble());
+
+    // Extract identifiant
+    if (!jsonObj.contains(KEY_SENDER_ID) || !jsonObj[KEY_SENDER_ID].isDouble())
+    {
+        std::cerr << "There is not a " << KEY_SENDER_ID <<" field in the message" << std::endl;
+        return;
+    }
+    unsigned int id= jsonObj[KEY_SENDER_ID].toInt();
+
+    if (m_robotList)
+    {
+        if (Robot* sender = m_robotList->getRobot(id))
+        {
+            sender->setPosition(pos);
+            emit(updateRobotPosition(id));
+
+            float range = sender->range();
+            for (auto& [rId, r] : *m_robotList)
+            {
+                if (rId != id)
+                {
+                    if (distance(sender->position(), r.position()) < range)
+                    {
+                        std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;
+                        r << message;
+                    }
+                }
+            }
+        }
+    }
 }
+
 
 void Router::listen(const std::string &fifoName)
 {
@@ -61,59 +120,8 @@ void Router::listen(const std::string &fifoName)
             break;
         std::cerr << "Received message : " << message << std::endl;
 
-        QJsonDocument messageJson = QJsonDocument::fromJson(QByteArray(message.c_str()));
+        std::thread (&Router::worker, this, message).detach();
 
-        if (!messageJson.isObject())
-        {
-            std::cerr << "The message is not an Object" << std::endl;
-            continue;
-        }
-        auto jsonObj = messageJson.object();
-        // { "pos":{"x":1,"y":2},"id":1}
-
-        // Extract position
-        if (!jsonObj.contains(KEY_POSITION) || !jsonObj[KEY_POSITION].isObject())
-        {
-            std::cerr << "There is not a '" << KEY_POSITION << "' field in the message" << std::endl;
-            continue;
-        }
-        auto jsonPos = jsonObj[KEY_POSITION].toObject();
-        if (!jsonPos.contains(KEY_X) || !jsonPos.contains(KEY_Y) || !jsonPos[KEY_X].isDouble() || !jsonPos[KEY_Y].isDouble())
-        {
-            std::cerr << "Field '" << KEY_POSITION << "' does not contains doubles " << KEY_X << " and/or " << KEY_Y<< std::endl;
-            continue;
-        }
-        QVector2D pos(jsonPos[KEY_X].toDouble(),jsonPos[KEY_Y].toDouble());
-
-        // Extract identifiant
-        if (!jsonObj.contains(KEY_SENDER_ID) || !jsonObj[KEY_SENDER_ID].isDouble())
-        {
-            std::cerr << "There is not a " << KEY_SENDER_ID <<" field in the message" << std::endl;
-            continue;
-        }
-        unsigned int id= jsonObj[KEY_SENDER_ID].toInt();
-
-        if (m_robotList)
-        {
-            if (Robot* sender = m_robotList->getRobot(id))
-            {
-                sender->setPosition(pos);
-                emit(updateRobotPosition(id));
-
-                float range = sender->range();
-                for (auto& [rId, r] : *m_robotList)
-                {
-                    if (rId != id)
-                    {
-                        if (distance(sender->position(), r.position()) < range)
-                        {
-                            std::cerr << "Message transmitted to " << rId << std::endl;
-                            r << message;
-                        }
-                    }
-                }
-            }
-        }
     }
 
 
