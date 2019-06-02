@@ -124,7 +124,7 @@ pub struct Position {
 }
 
 pub struct PolyMap {
-    ploygons: Vec<Polygon>,
+    polygons: Vec<Polygon>,
 }
 
 impl PolyMap {}
