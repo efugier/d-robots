@@ -9,7 +9,7 @@ pub enum Event {
     Collision(Point),
     Moved(Distance),
     Turned(Angle),
-    Reached(Distance, Distance),
+    Reached(Point),
     Curr(Position),
     Lacc(Vec<Acceleration>),
 }
