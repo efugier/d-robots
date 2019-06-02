@@ -5,7 +5,7 @@ mod polygon;
 pub use polygon::Polygon;
 
 /// Approximated zero
-const ZERO: Distance = 1e-6;
+const EPSILON: Distance = 1e-6;
 
 /// Centimeters
 pub type Distance = f32;
@@ -14,7 +14,7 @@ pub type Distance = f32;
 pub type Angle = f32;
 
 /// Acceleration
-pub type Acc = f32;
+pub type Acceleration = f32;
 
 #[derive(Copy, Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Point {
@@ -57,7 +57,7 @@ impl Mul<Point> for Distance {
 
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
-        (self.x - other.x).abs() < ZERO && (self.y - other.y).abs() < ZERO
+        (self.x - other.x).abs() < EPSILON && (self.y - other.y).abs() < EPSILON
     }
 }
 
@@ -66,7 +66,7 @@ impl Point {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
 
-        to_degrees((dy / dx).atan())
+        (dy / dx).atan().to_degrees()
     }
 
     pub fn vec_to(&self, other: &Point) -> Point {
@@ -102,7 +102,7 @@ impl Segment {
         let r_vec_s = r.cross_prod(&s);
 
         // the segments are parallel
-        if r_vec_s.abs() < ZERO {
+        if r_vec_s.abs() < EPSILON {
             return None;
         }
 
@@ -128,10 +128,6 @@ pub struct PolyMap {
 }
 
 impl PolyMap {}
-
-fn to_degrees(r: Angle) -> Angle {
-    r * 180.0 / std::f32::consts::PI
-}
 
 #[cfg(test)]
 mod tests {
