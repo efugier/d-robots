@@ -61,7 +61,6 @@ impl AI {
             Rgb([255, 255, 255]),
         );
 
-        // self.draw_robot(&mut img, &self.all_positions[0], Rgb([255, 0, 0]));
         for (i, pos) in self.all_positions.iter().enumerate() {
             let color = if i == 0 {
                 Rgb([255, 0, 0])
@@ -69,8 +68,6 @@ impl AI {
                 Rgb([0, 0, 255])
             };
             self.draw_robot(&mut img, pos, color);
-            // let (x, y) = pos_to_pixels(pos.p);
-            // draw_cross_mut(&mut img, Rgb([0, 0, 255]), x, y);
         }
 
         std::fs::create_dir_all("output")
