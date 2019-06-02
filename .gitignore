@@ -1,1 +1,4 @@
 build/**
+.vscode/ipch
+.ipynb_checkpoints
+.mypy_cache
