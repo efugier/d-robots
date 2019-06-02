@@ -6,6 +6,7 @@ pub use polygon::Polygon;
 
 /// Approximated zero
 const ZERO: Distance = 1e-6;
+
 /// Centimeters
 pub type Distance = f32;
 
@@ -100,7 +101,7 @@ impl Segment {
 
         let r_vec_s = r.cross_prod(&s);
 
-        // the segments are parrallel
+        // the segments are parallel
         if r_vec_s.abs() < ZERO {
             return None;
         }
@@ -145,7 +146,20 @@ mod tests {
 
         assert_eq!(Some(intersection), s1.intersection(&s2));
 
+        // Test for parallel
+        let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 2., y: 2. });
+        let s2 = Segment(Point { x: 0., y: -1. }, Point { x: 2., y: 1. });
+
+        assert_eq!(None, s1.intersection(&s2));
+
+        // Test for t > 1 (intersection not in segment)
         let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 1., y: 1. });
+        let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
+
+        assert_eq!(None, s1.intersection(&s2));
+
+        // Test for t < 0 (same but the other way)
+        let s1 = Segment( Point { x: 1., y: 1. }, Point { x: 0., y: 0. });
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
 
         assert_eq!(None, s1.intersection(&s2));
