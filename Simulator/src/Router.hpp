@@ -21,6 +21,8 @@ signals:
 private:
     std::string cRead(int fd);
 
+    void worker(std::string message);
+
     std::shared_ptr<RobotsHandler> m_robotList;
     int m_fifoFd = 0;
     bool m_listen = true;

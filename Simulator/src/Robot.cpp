@@ -50,7 +50,7 @@ void Robot::operator<<(const std::string &message)
 
 void Robot::instanciate(const std::string& fifoName)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     std::stringstream command;
     command << RUST_PARAMS << " " << ROBOT_APP << " -i " << fifoName.c_str() << " -o " << m_simulFifo.c_str() << " --name " << m_id;
     std::cerr << "Execute command " << command.str() << std::endl;

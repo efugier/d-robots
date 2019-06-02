@@ -25,6 +25,8 @@ public:
     QVector2D position() const {return m_position; }
     void setPosition(const QVector2D& position) { m_position = position;}
 
+    unsigned int id() const { return m_id; }
+
     void instanciate(const std::string& fifoName);
 
     QGraphicsPixmapItem* pixmapItem() const { return m_pixmap; }
