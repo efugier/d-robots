@@ -93,10 +93,9 @@ impl Segment {
     /// p + tu = q + us
     /// t = (q - p).cross_prod(s) / (r.cross_prod(s))
     pub fn intersection(&self, other: &Segment) -> Option<Point> {
-        let p = self.0;
+        // p = self.0
+        // q = other.0
         let r = self.0.vec_to(&self.1);
-
-        let q = other.0;
         let s = other.0.vec_to(&other.1);
 
         let r_vec_s = r.cross_prod(&s);
@@ -106,13 +105,13 @@ impl Segment {
             return None;
         }
 
-        let t = (q - p).cross_prod(&s) / r_vec_s;
+        let t = (other.0 - self.0).cross_prod(&s) / r_vec_s;
 
         // the segment does not intersect
         if t.abs() > 1. {
             None
         } else {
-            Some(p + t * r)
+            Some(self.0 + t * r)
         }
     }
 }
