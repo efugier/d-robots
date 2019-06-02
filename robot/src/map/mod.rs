@@ -84,6 +84,14 @@ impl Point {
     pub fn cross_prod(&self, other: &Point) -> Distance {
         self.x * other.y - self.y * other.x
     }
+
+    pub fn rotate_deg(&self, angle: f32) -> Point {
+        let (sin, cos) = angle.to_radians().sin_cos();
+        Point {
+            x: self.x * cos - self.y * sin,
+            y: self.x * sin + self.y * cos,
+        }
+    }
 }
 
 pub struct Segment(Point, Point);
