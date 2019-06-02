@@ -89,9 +89,9 @@ pub struct Segment(Point, Point);
 impl Segment {
     /// seg1 = p + r
     /// seg2 = q + s
-    /// intersection <=> exists t,u in [-1, 1] such that
-    /// p + tu = q + us
-    /// t = (q - p).cross_prod(s) / (r.cross_prod(s))
+    /// intersection <=> exists t,u in [0, 1] such that
+    /// p + tr = q + us
+    /// where t = (q - p).cross_prod(s) / (r.cross_prod(s))
     pub fn intersection(&self, other: &Segment) -> Option<Point> {
         // p = self.0
         // q = other.0
@@ -108,7 +108,7 @@ impl Segment {
         let t = (other.0 - self.0).cross_prod(&s) / r_vec_s;
 
         // the segment does not intersect
-        if t.abs() > 1. {
+        if t < 0. || t > 1. {
             None
         } else {
             Some(self.0 + t * r)
