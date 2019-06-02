@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
@@ -14,12 +13,6 @@ use crate::robot::{self, Robot};
 pub type AppId = u32;
 
 use crate::events::Events;
-
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct Position {
-    pub x: f32,
-    pub y: f32,
-}
 
 pub enum Event {
     /// Robot message

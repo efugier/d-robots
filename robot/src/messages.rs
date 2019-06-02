@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use super::app::{AppId, Position};
+use super::app::AppId;
+use crate::map::Position;
 
 pub type MsgId = u32;
 
@@ -39,7 +40,6 @@ impl Msg {
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]
@@ -47,7 +47,7 @@ mod tests {
         let msg = Msg {
             id: rand::random(),
             sender_id: rand::random(),
-            pos: Position { x: 0.0, y: 0.0 },
+            pos: Position::default(),
             header: Header::Private(rand::random(), "I like trains !".to_string()),
         };
 
