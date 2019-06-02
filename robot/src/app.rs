@@ -57,7 +57,7 @@ impl App {
 
         App {
             id,
-            ai: AI {},
+            ai: AI::new(id),
             robot,
             output,
             self_tx,
