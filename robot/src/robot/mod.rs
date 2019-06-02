@@ -2,7 +2,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use crate::map::{Acc, Angle, Distance, Point, Position};
+use crate::map::{Acceleration, Angle, Distance, Point, Position};
 
 #[derive(Debug)]
 pub enum Event {
@@ -11,7 +11,7 @@ pub enum Event {
     Turned(Angle),
     Reached(Distance, Distance),
     Curr(Position),
-    Lacc(Vec<Acc>),
+    Lacc(Vec<Acceleration>),
 }
 use Event::*;
 
