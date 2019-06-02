@@ -62,11 +62,12 @@ impl PartialEq for Point {
 }
 
 impl Point {
-    pub fn angle(&self, other: &Point) -> Angle {
-        let dx = self.x - other.x;
-        let dy = self.y - other.y;
+    pub fn zero() -> Point {
+        Point { x: 0., y: 0. }
+    }
 
-        (dy / dx).atan().to_degrees()
+    pub fn angle(&self) -> Angle {
+        self.y.atan2(self.x).to_degrees()
     }
 
     pub fn vec_to(&self, other: &Point) -> Point {
@@ -134,6 +135,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn point_test() {
+        let p1 = Point { x: 1., y: 2. };
+        assert_eq!(Point::zero().angle(), 0.);
+        let p2 = Point { x: 1., y: 3. };
+        assert_eq!((p2 - p1).angle(), 90.);
+        assert_eq!((p1 - p2).angle(), -90.);
+    }
+
+    #[test]
     fn intersection_test() {
         let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 2., y: 2. });
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 0. });
@@ -155,7 +165,7 @@ mod tests {
         assert_eq!(None, s1.intersection(&s2));
 
         // Test for t < 0 (same but the other way)
-        let s1 = Segment( Point { x: 1., y: 1. }, Point { x: 0., y: 0. });
+        let s1 = Segment(Point { x: 1., y: 1. }, Point { x: 0., y: 0. });
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
 
         assert_eq!(None, s1.intersection(&s2));
