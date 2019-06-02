@@ -28,6 +28,12 @@ fn pos_to_pixels(point: Point) -> (i32, i32) {
     (x, y)
 }
 
+fn pixels_to_pos(p: (i32, i32)) -> Point {
+    let x = p.0 as f32 / PIXELS_PER_METER as f32 - CENTER_X;
+    let y = p.1 as f32 / PIXELS_PER_METER as f32 - CENTER_Y;
+    Point { x, y }
+}
+
 impl AI {
     pub fn new(app_id: AppId) -> Self {
         AI {
@@ -39,7 +45,8 @@ impl AI {
     }
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
-        self.mark_seen_circle(0.2);
+        self.mark_seen_circle(0.1);
+
         self.all_positions[0].a += 30.;
         self.update_debug_image();
         if m.len() < 4 {
@@ -61,15 +68,12 @@ impl AI {
 
             for x in -radius_p..=radius_p {
                 let ix = rx + x;
-                if ix < 0 || ix >=self.map_seen.cols() as i32 {
+                if ix < 0 || ix >= self.map_seen.cols() as i32 {
                     continue;
                 }
 
-                let dist = (Point {
-                    x: ix as f32,
-                    y: iy as f32,
-                } - robot)
-                    .sq_norm();
+                let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
+                // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
                 if dist <= radius * radius {
                     self.map_seen[(ix as usize, iy as usize)] = 1.;
                 }
@@ -90,6 +94,12 @@ impl AI {
             MAP_HEIGHT * PIXELS_PER_METER,
             Rgb([255, 255, 255]),
         );
+
+        for ((x, y), seen) in self.map_seen.indexed_iter() {
+            if *seen > 0. {
+                img[(x as u32, y as u32)] = Rgb([127, 127, 127]);
+            }
+        }
 
         for (i, pos) in self.all_positions.iter().enumerate() {
             let color = if i == 0 {
