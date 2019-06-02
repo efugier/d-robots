@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
+use std::ops::{Add, Mul, Sub};
+
 mod polygon;
 pub use polygon::Ploygon;
 
+/// Approximated zero
+const ZERO: Distance = 1e-6;
 /// Centimeters
 pub type Distance = f32;
 
@@ -11,40 +15,105 @@ pub type Angle = f32;
 /// Acceleration
 pub type Acc = f32;
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Copy, Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Point {
     pub x: Distance,
     pub y: Distance,
 }
 
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl Sub for Point {
+    type Output = Point;
+
+    fn sub(self, other: Point) -> Point {
+        Point {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+}
+
+impl Mul<Point> for Distance {
+    type Output = Point;
+
+    fn mul(self, rhs: Point) -> Point {
+        Point {
+            x: self * rhs.x,
+            y: self * rhs.y,
+        }
+    }
+}
+
+impl PartialEq for Point {
+    fn eq(&self, other: &Self) -> bool {
+        (self.x - other.x).abs() < ZERO && (self.y - other.y).abs() < ZERO
+    }
+}
+
 impl Point {
-    pub fn angle(&self, p: &Point) -> Angle {
-        let dx = self.x - p.x;
-        let dy = self.y - p.y;
+    pub fn angle(&self, other: &Point) -> Angle {
+        let dx = self.x - other.x;
+        let dy = self.y - other.y;
 
         to_degrees((dy / dx).atan())
+    }
+
+    pub fn vec_to(&self, other: &Point) -> Point {
+        Point {
+            x: other.x - self.x,
+            y: other.y - self.y,
+        }
+    }
+
+    pub fn dot_prod(&self, other: &Point) -> Distance {
+        self.x * other.x + self.y * other.y
+    }
+
+    pub fn cross_prod(&self, other: &Point) -> Distance {
+        self.x * other.y - self.y * other.x
     }
 }
 
 pub struct Segment(Point, Point);
 
 impl Segment {
-    pub fn intersection(&self, pos: &Position) -> Option<Point> {
-        let p1;
-        let p2;
-        if self.0.x <= self.1.x {
-            p1 = &self.0;
-            p2 = &self.1;
-        } else {
-            p1 = &self.1;
-            p2 = &self.0;
-        };
+    /// seg1 = p + r
+    /// seg2 = q + s
+    /// intersection <=> exists t,u in [-1, 1] such that
+    /// p + tu = q + us
+    /// t = (q - p).cross_prod(s) / (r.cross_prod(s))
+    pub fn intersection(&self, other: &Segment) -> Option<Point> {
+        let p = self.0;
+        let r = self.0.vec_to(&self.1);
 
-        // intersection exists
-        if pos.p.angle(p1) <= pos.a && pos.a <= pos.p.angle(p2) {
-            return Some(Point::default());
+        let q = other.0;
+        let s = other.0.vec_to(&other.1);
+
+        let r_vec_s = r.cross_prod(&s);
+
+        // the segments are parrallel
+        if r_vec_s.abs() < ZERO {
+            return None;
         }
-        None
+
+        let t = (q - p).cross_prod(&s) / r_vec_s;
+
+        // the segment does not intersect
+        if t.abs() > 1. {
+            None
+        } else {
+            Some(p + t * r)
+        }
     }
 }
 
@@ -54,8 +123,6 @@ pub struct Position {
     pub a: Angle,
 }
 
-impl Position {}
-
 pub struct PolyMap {
     ploygons: Vec<Ploygon>,
 }
@@ -64,4 +131,24 @@ impl PolyMap {}
 
 fn to_degrees(r: Angle) -> Angle {
     r * 180.0 / std::f32::consts::PI
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn intersection_test() {
+        let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 2., y: 2. });
+        let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 0. });
+
+        let intersection = Point { x: 1., y: 1. };
+
+        assert_eq!(Some(intersection), s1.intersection(&s2));
+
+        let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 1., y: 1. });
+        let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
+
+        assert_eq!(None, s1.intersection(&s2));
+    }
 }
