@@ -8,6 +8,7 @@ use structopt::StructOpt;
 mod ai;
 mod app;
 mod events;
+mod map;
 mod messages;
 mod robot;
 
