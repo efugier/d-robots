@@ -1,10 +1,10 @@
 use super::{Point, Position};
 
-pub struct Ploygon {
+pub struct Polygon {
     points: Vec<Point>,
 }
 
-impl Ploygon {
+impl Polygon {
     pub fn intersection(&self, pos: Position) -> Option<Point> {
         unimplemented!();
     }

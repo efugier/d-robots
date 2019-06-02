@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul, Sub};
 
 mod polygon;
-pub use polygon::Ploygon;
+pub use polygon::Polygon;
 
 /// Approximated zero
 const ZERO: Distance = 1e-6;
@@ -123,7 +123,7 @@ pub struct Position {
 }
 
 pub struct PolyMap {
-    ploygons: Vec<Ploygon>,
+    ploygons: Vec<Polygon>,
 }
 
 impl PolyMap {}
