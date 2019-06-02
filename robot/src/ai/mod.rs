@@ -39,12 +39,42 @@ impl AI {
     }
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
+        self.mark_seen_circle(0.2);
         self.all_positions[0].a += 30.;
         self.update_debug_image();
         if m.len() < 4 {
             return None;
         }
         Some(format!("I am smart and can read long sentences"))
+    }
+
+    /// mark the area around the robot as seen (in a circle, radius in meters)
+    fn mark_seen_circle(&mut self, radius: f32) {
+        let robot = self.all_positions[0].p;
+        let (rx, ry) = pos_to_pixels(robot);
+        let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as i32;
+        for y in -radius_p..=radius_p {
+            let iy = ry + y;
+            if iy < 0 || iy >= self.map_seen.rows() as i32 {
+                continue;
+            }
+
+            for x in -radius_p..=radius_p {
+                let ix = rx + x;
+                if ix < 0 || ix >=self.map_seen.cols() as i32 {
+                    continue;
+                }
+
+                let dist = (Point {
+                    x: ix as f32,
+                    y: iy as f32,
+                } - robot)
+                    .sq_norm();
+                if dist <= radius * radius {
+                    self.map_seen[(ix as usize, iy as usize)] = 1.;
+                }
+            }
+        }
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {

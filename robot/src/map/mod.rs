@@ -92,6 +92,10 @@ impl Point {
             y: self.x * sin + self.y * cos,
         }
     }
+
+    pub fn sq_norm(&self) -> Distance {
+        self.x * self.x + self.y * self.y
+    }
 }
 
 pub struct Segment(Point, Point);
