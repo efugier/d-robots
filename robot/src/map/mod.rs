@@ -8,9 +8,10 @@ pub use polygon::Polygon;
 /// Approximated zero
 const EPSILON: Distance = 1e-6;
 
+/// Whatever
 pub type Distance = f32;
 
-/// Degrees
+/// Radian
 pub type Angle = f32;
 
 /// Acceleration
