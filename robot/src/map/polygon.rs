@@ -1,4 +1,4 @@
-use super::{Point, Position, Segment};
+use super::{Point, Segment};
 
 pub struct Polygon {
     pub points: Vec<Point>,
@@ -10,7 +10,6 @@ impl Polygon {
         IterPolygon {
             polygon: self,
             curr: 0,
-            next: 1,
         }
     }
 }
@@ -18,7 +17,6 @@ impl Polygon {
 pub struct IterPolygon<'a> {
     polygon: &'a Polygon,
     curr: usize,
-    next: usize,
 }
 
 impl<'a> Iterator for IterPolygon<'a> {
@@ -26,22 +24,15 @@ impl<'a> Iterator for IterPolygon<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let len = self.polygon.points.len();
-        if self.curr >= len {
-            return None;
+        if (self.curr >= len - 1 && !self.polygon.is_closed) || self.curr >= len {
+            None
+        } else {
+            let seg = Segment(
+                self.polygon.points[self.curr],
+                self.polygon.points[(self.curr + 1) % len],
+            );
+            self.curr += 1;
+            Some(seg)
         }
-
-        // last item
-        // a polygon with a single point is always considered closed
-        if self.next >= len && (self.polygon.is_closed || len == 1) {
-            self.next = 0;
-        }
-
-        let seg = Segment(
-            self.polygon.points[self.curr],
-            self.polygon.points[self.next],
-        );
-        self.curr += 1;
-        self.next += 1;
-        Some(seg)
     }
 }

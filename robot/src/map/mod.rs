@@ -8,8 +8,6 @@ pub use polygon::Polygon;
 /// Approximated zero
 const EPSILON: Distance = 1e-6;
 
-/// Centimeters
-use std::f32::INFINITY;
 pub type Distance = f32;
 
 /// Degrees
@@ -107,7 +105,7 @@ impl Point {
     }
 }
 
-pub struct Segment(Point, Point);
+pub struct Segment(pub Point, pub Point);
 
 impl Segment {
     /// seg1 = p + r
@@ -146,19 +144,19 @@ pub struct Position {
 }
 
 pub struct PolyMap {
-    polygons: Vec<Polygon>,
+    pub polygons: Vec<Polygon>,
 }
 
 impl PolyMap {
     /// Returns an iterator over the map's segments
-    fn segments(&self) -> impl Iterator<Item = Segment> + '_ {
+    pub fn segments(&self) -> impl Iterator<Item = Segment> + '_ {
         self.polygons.iter().flat_map(|p| p.segments())
     }
 
     /// Return the the first point encountered when going
     /// from the first end (.0) of the segment to the other (.1)
     /// i.e. the closest intersection with one of the map's segments
-    fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
+    pub fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
         self.segments()
             .filter_map(|seg| s.intersection(&seg))
             .map(|p| (p, s.0.sq_dist(p)))

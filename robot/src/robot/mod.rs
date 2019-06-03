@@ -2,7 +2,10 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use crate::map::{Acceleration, Angle, Distance, Point, Position};
+use crate::map::{Acceleration, Angle, Distance, Point, PolyMap, Position, Segment};
+
+/// cm/s
+const ROBOT_SPEED: Distance = 100.;
 
 #[derive(Debug)]
 pub enum Event {
@@ -20,6 +23,8 @@ pub struct Robot {
     app_tx: mpsc::Sender<Event>,
     // Robot position
     pub pos: Position,
+    // Actual map used for the simuation
+    actual_map: PolyMap,
 }
 
 impl Robot {
@@ -30,6 +35,7 @@ impl Robot {
             Robot {
                 app_tx,
                 pos: Position::default(),
+                actual_map: PolyMap { polygons: vec![] },
             },
             rx,
         )
@@ -43,6 +49,7 @@ impl Robot {
                     p: Point { x, y },
                     a,
                 },
+                actual_map: PolyMap { polygons: vec![] },
             },
             rx,
         )
@@ -60,8 +67,15 @@ impl Robot {
             tx.send(event).unwrap();
         });
     }
-    pub fn go_to(x: Distance, y: Distance) {
-        unimplemented!()
+    pub fn go_to(&self, dest: Point) {
+        let trajectory = Segment(self.pos.p, dest);
+        if let Some(stop) = self.actual_map.first_intersection(&trajectory) {
+            let t = duration_from_to(self.pos.p, stop);
+            self.send_to_app_delayed(Reached(stop), t);
+        } else {
+            let t = duration_from_to(self.pos.p, dest);
+            self.send_to_app_delayed(Reached(dest), t);
+        }
     }
     pub fn forward(dist: Distance) {
         unimplemented!()
@@ -94,4 +108,9 @@ impl Robot {
             println!("I am in release mode");
         }
     }
+}
+
+pub fn duration_from_to(p1: Point, p2: Point) -> Duration {
+    let t = p1.sq_dist(p2).sqrt() / ROBOT_SPEED;
+    Duration::from_secs(t as u64)
 }
