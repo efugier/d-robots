@@ -4,8 +4,9 @@ use std::time::Duration;
 
 use crate::map::{Acceleration, Angle, Distance, Point, PolyMap, Position, Segment};
 
-/// cm/s
-const ROBOT_SPEED: Distance = 100.;
+/// m/s
+const ROBOT_SPEED: Distance = 1.;
+const PI: Distance = std::f32::consts::PI;
 
 #[derive(Debug)]
 pub enum Event {
@@ -67,21 +68,27 @@ impl Robot {
             tx.send(event).unwrap();
         });
     }
-    pub fn go_to(&self, dest: Point) {
-        let trajectory = Segment(self.pos.p, dest);
-        if let Some(stop) = self.actual_map.first_intersection(&trajectory) {
+    pub fn go_to(&mut self, dest: &Point) {
+        let trajectory = Segment(self.pos.p, *dest);
+        let (t, final_pos) = if let Some(stop) = self.actual_map.first_intersection(&trajectory) {
             let t = duration_from_to(self.pos.p, stop);
-            self.send_to_app_delayed(Reached(stop), t);
+            (t, stop)
         } else {
-            let t = duration_from_to(self.pos.p, dest);
-            self.send_to_app_delayed(Reached(dest), t);
-        }
+            let t = duration_from_to(self.pos.p, *dest);
+            (t, *dest)
+        };
+        self.send_to_app_delayed(Reached(final_pos), t);
+        self.pos.p = final_pos;
     }
-    pub fn forward(dist: Distance) {
-        unimplemented!()
+    pub fn forward(&mut self, dist: Distance) {
+        let dest = Point {
+            x: self.pos.p.x + dist * self.pos.a.cos(),
+            y: self.pos.p.y + dist * self.pos.a.sin(),
+        };
+        self.go_to(&dest);
     }
-    pub fn turn(angle: Angle) {
-        unimplemented!()
+    pub fn turn(&mut self, angle: Angle) {
+        self.pos.a = (self.pos.a + angle) % (2. * PI);
     }
     /// return the last 10 acceleration norms
     pub fn lacc(angle: Angle) {
