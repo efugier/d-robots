@@ -24,7 +24,8 @@ impl<'a> Iterator for IterPolygon<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let len = self.polygon.points.len();
-        if (self.curr >= len - 1 && !self.polygon.is_closed) || self.curr >= len {
+        // case len = 1, and 2 are special
+        if (self.curr >= len - 1 && (!self.polygon.is_closed || len < 3)) || self.curr >= len {
             None
         } else {
             let seg = Segment(
