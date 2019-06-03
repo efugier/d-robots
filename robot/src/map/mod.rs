@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::ops::{Add, Mul, Sub};
 
 mod polygon;
@@ -8,6 +9,7 @@ pub use polygon::Polygon;
 const EPSILON: Distance = 1e-6;
 
 /// Centimeters
+use std::f32::INFINITY;
 pub type Distance = f32;
 
 /// Degrees
@@ -93,8 +95,15 @@ impl Point {
         }
     }
 
+    pub fn sq_dist(&self, other: Self) -> Distance {
+        let dx = self.x - other.x;
+        let dy = self.y - other.y;
+
+        dx * dx + dy * dy
+    }
+
     pub fn sq_norm(&self) -> Distance {
-        self.x * self.x + self.y * self.y
+        self.cross_prod(self)
     }
 }
 
@@ -141,8 +150,20 @@ pub struct PolyMap {
 }
 
 impl PolyMap {
-    fn first_intersection(s: &Segment) -> Option<Point> {
-        unimplemented!();
+    /// Returns an iterator over the map's segments
+    fn segments(&self) -> impl Iterator<Item = Segment> + '_ {
+        self.polygons.iter().flat_map(|p| p.segments())
+    }
+
+    /// Return the the first point encountered when going
+    /// from the first end (.0) of the segment to the other (.1)
+    /// i.e. the closest intersection with one of the map's segments
+    fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
+        self.segments()
+            .filter_map(|seg| s.intersection(&seg))
+            .map(|p| (p, s.0.sq_dist(p)))
+            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Less))
+            .map(|(pt, _)| pt)
     }
 }
 
