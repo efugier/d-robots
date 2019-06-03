@@ -140,7 +140,11 @@ pub struct PolyMap {
     polygons: Vec<Polygon>,
 }
 
-impl PolyMap {}
+impl PolyMap {
+    fn first_intersection(s: &Segment) -> Option<Point> {
+        unimplemented!();
+    }
+}
 
 #[cfg(test)]
 mod tests {
