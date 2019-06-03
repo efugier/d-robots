@@ -25,19 +25,23 @@ impl<'a> Iterator for IterPolygon<'a> {
     type Item = Segment;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.curr >= self.polygon.points.len() {
-            None
-        } else {
-            let seg = Segment(
-                self.polygon.points[self.curr],
-                self.polygon.points[self.next],
-            );
-            self.curr += 1;
-            self.next += 1;
-            if self.polygon.is_closed && self.next >= self.polygon.points.len() {
-                self.next = 0;
-            }
-            Some(seg)
+        let len = self.polygon.points.len();
+        if self.curr >= len {
+            return None;
         }
+
+        // last item
+        // a polygon with a single point is always considered closed
+        if self.next >= len && (self.polygon.is_closed || len == 1) {
+            self.next = 0;
+        }
+
+        let seg = Segment(
+            self.polygon.points[self.curr],
+            self.polygon.points[self.next],
+        );
+        self.curr += 1;
+        self.next += 1;
+        Some(seg)
     }
 }
