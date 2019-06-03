@@ -81,10 +81,7 @@ impl Robot {
         self.pos.p = final_pos;
     }
     pub fn forward(&mut self, dist: Distance) {
-        let dest = Point {
-            x: self.pos.p.x + dist * self.pos.a.cos(),
-            y: self.pos.p.y + dist * self.pos.a.sin(),
-        };
+        let dest = self.pos.p + Point { x: 0., y: dist }.rotate(self.pos.a);
         self.go_to(&dest);
     }
     pub fn turn(&mut self, angle: Angle) {
