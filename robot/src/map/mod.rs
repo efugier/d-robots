@@ -85,23 +85,24 @@ impl Point {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn rotate_deg(&self, angle: f32) -> Point {
-        let (sin, cos) = angle.to_radians().sin_cos();
+    pub fn rotate(&self, angle: Angle) -> Point {
+        let (sin, cos) = angle.sin_cos();
         Point {
             x: self.x * cos - self.y * sin,
             y: self.x * sin + self.y * cos,
         }
     }
 
-    pub fn sq_dist(&self, other: Self) -> Distance {
-        let dx = self.x - other.x;
-        let dy = self.y - other.y;
-
-        dx * dx + dy * dy
+    pub fn rotate_deg(&self, angle: Angle) -> Point {
+        self.rotate(angle.to_radians())
     }
 
     pub fn sq_norm(&self) -> Distance {
-        self.cross_prod(self)
+        self.dot_prod(self)
+    }
+
+    pub fn sq_dist(&self, other: &Self) -> Distance {
+        (*self - *other).sq_norm()
     }
 }
 
@@ -159,8 +160,8 @@ impl PolyMap {
     pub fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
         self.segments()
             .filter_map(|seg| s.intersection(&seg))
-            .map(|p| (p, s.0.sq_dist(p)))
-            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Less))
+            .map(|p| (p, s.0.sq_dist(&p)))
+            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Equal))
             .map(|(pt, _)| pt)
     }
 }
