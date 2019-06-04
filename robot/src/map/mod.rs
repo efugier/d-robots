@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::ops::{Add, Mul, Sub};
 
 mod polygon;
@@ -7,10 +8,10 @@ pub use polygon::Polygon;
 /// Approximated zero
 const EPSILON: Distance = 1e-6;
 
-/// Centimeters
+/// Whatever
 pub type Distance = f32;
 
-/// Degrees
+/// Radian
 pub type Angle = f32;
 
 /// Acceleration
@@ -85,20 +86,28 @@ impl Point {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn rotate_deg(&self, angle: f32) -> Point {
-        let (sin, cos) = angle.to_radians().sin_cos();
+    pub fn rotate(&self, angle: Angle) -> Point {
+        let (sin, cos) = angle.sin_cos();
         Point {
             x: self.x * cos - self.y * sin,
             y: self.x * sin + self.y * cos,
         }
     }
 
+    pub fn rotate_deg(&self, angle: Angle) -> Point {
+        self.rotate(angle.to_radians())
+    }
+
     pub fn sq_norm(&self) -> Distance {
-        self.x * self.x + self.y * self.y
+        self.dot_prod(self)
+    }
+
+    pub fn sq_dist(&self, other: &Self) -> Distance {
+        (*self - *other).sq_norm()
     }
 }
 
-pub struct Segment(Point, Point);
+pub struct Segment(pub Point, pub Point);
 
 impl Segment {
     /// seg1 = p + r
@@ -137,10 +146,26 @@ pub struct Position {
 }
 
 pub struct PolyMap {
-    polygons: Vec<Polygon>,
+    pub polygons: Vec<Polygon>,
 }
 
-impl PolyMap {}
+impl PolyMap {
+    /// Returns an iterator over the map's segments
+    pub fn segments(&self) -> impl Iterator<Item = Segment> + '_ {
+        self.polygons.iter().flat_map(|p| p.segments())
+    }
+
+    /// Return the the first point encountered when going
+    /// from the first end (.0) of the segment to the other (.1)
+    /// i.e. the closest intersection with one of the map's segments
+    pub fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
+        self.segments()
+            .filter_map(|seg| s.intersection(&seg))
+            .map(|p| (p, s.0.sq_dist(&p)))
+            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Equal))
+            .map(|(pt, _)| pt)
+    }
+}
 
 #[cfg(test)]
 mod tests {
