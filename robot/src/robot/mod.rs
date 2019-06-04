@@ -116,5 +116,5 @@ impl Robot {
 
 pub fn duration_from_to(p1: Point, p2: Point) -> Duration {
     let t = p1.sq_dist(&p2).sqrt() / ROBOT_SPEED;
-    Duration::from_secs(t as u64)
+    Duration::from_millis((1000. * t) as u64)
 }
