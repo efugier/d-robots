@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+use std::error::Error;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Write};
 use std::ops::{Add, Mul, Sub};
+use std::path::PathBuf;
 
 mod polygon;
 pub use polygon::Polygon;
@@ -145,6 +149,7 @@ pub struct Position {
     pub a: Angle,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PolyMap {
     pub polygons: Vec<Polygon>,
 }
@@ -164,6 +169,54 @@ impl PolyMap {
             .map(|p| (p, s.0.sq_dist(&p)))
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Equal))
             .map(|(pt, _)| pt)
+    }
+
+    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<Error>> {
+        //Saving message history to file
+        let mut save_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
+            .expect("Failed to create history file");
+
+        let pretty_str = serde_json::to_string_pretty(&self)?;
+        save_file.write_all(format!("{}\n", pretty_str).as_bytes())?;
+        Ok(())
+    }
+    pub fn from_file(path: &PathBuf) -> Result<Self, Box<Error>> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+
+        let map = serde_json::from_reader(reader)?;
+        Ok(map)
+    }
+}
+
+impl Default for PolyMap {
+    fn default() -> Self {
+        let p1 = Polygon {
+            points: vec![
+                Point { x: -10., y: -10. },
+                Point { x: -10., y: 10. },
+                Point { x: 10., y: 10. },
+                Point { x: 10., y: -10. },
+            ],
+            is_closed: true,
+        };
+        let p2 = Polygon {
+            points: vec![
+                Point { x: 0., y: 0. },
+                Point { x: 0., y: 2. },
+                Point { x: 5., y: 2. },
+                Point { x: 5., y: 0. },
+            ],
+            is_closed: true,
+        };
+
+        PolyMap {
+            polygons: vec![p1, p2],
+        }
     }
 }
 
@@ -206,5 +259,17 @@ mod tests {
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
 
         assert_eq!(None, s1.intersection(&s2));
+    }
+
+    #[test]
+    fn save_test() {
+        let path: PathBuf = "test_map_aljjbdbclwhblaszblxaksjxsa.json".into();
+        let test_map = PolyMap::default();
+
+        assert!(test_map.save_to_file(&path).is_ok(), "failed to save the map");
+
+        assert!(PolyMap::from_file(&path).is_ok(), "failed to read the map");
+
+        assert!(std::fs::remove_file(path).is_ok(), "save file should exist");
     }
 }
