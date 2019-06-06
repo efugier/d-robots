@@ -1,5 +1,7 @@
 use super::{Point, Segment};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Polygon {
     pub points: Vec<Point>,
     pub is_closed: bool,
