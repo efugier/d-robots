@@ -65,6 +65,7 @@ impl App {
             sent_messages_ids: HashSet::new(),
         }
     }
+
     fn send_to_network(&mut self, msg: Msg) {
         self.sent_messages_ids.insert(msg.id.clone());
 
@@ -81,9 +82,8 @@ impl App {
             log::info!("sent, messsage: {:?}", msg.header);
         }
     }
+
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // Conditional compilation test
-        // and robot order demo
         self.robot.be_a_robot();
         let greeting_message = Msg::new(
             self.id,
