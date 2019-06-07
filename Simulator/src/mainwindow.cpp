@@ -1,7 +1,11 @@
 #include "mainwindow.h"
 #include <iostream>
 #include <QString>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include <QKeyEvent>
+#include <QColor>
 
 MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent) :
     QMainWindow(parent), m_robotList(robotList)
@@ -16,6 +20,91 @@ MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent
     robotPm = new QPixmap(":/img/robot.png");
     std::cerr << "MainWindow created" << std::endl;
     if(robotPm->isNull()) std::cerr << "Error creating pixmap" << std::endl;
+
+    loadMap();
+}
+
+void MainWindow::loadMap()
+{
+    QFile file("map_example.json");
+    file.open(QIODevice::ReadOnly);
+
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(file.readAll());
+
+
+    file.close();
+
+    if (!jsonDoc.isObject())
+    {
+        std::cerr << "The document following is not an object :" << std::endl;
+        std::cerr << jsonDoc.toBinaryData().toStdString() << std::endl;
+        return;
+    }
+    if (!jsonDoc.object().contains(KEY_POLYGONS) || !jsonDoc.object()[KEY_POLYGONS].isArray())
+    {
+        std::cerr << "The object does not contains an array '" << KEY_POLYGONS << "'" << std::endl;
+        return;
+    }
+    auto polygons = jsonDoc.object()[KEY_POLYGONS].toArray();
+
+    QPen pen((QColor(Qt::blue)));
+    for (auto rawPolygon : polygons)
+    {
+        if (!rawPolygon.isObject())
+        {
+            std::cerr << "A polygon is not an object" << std::endl;
+            return;
+        }
+        auto polygon = rawPolygon.toObject();
+        if (!polygon.contains(KEY_CLOSED) || !polygon[KEY_CLOSED].isBool())
+        {
+            std::cerr << "The following polygon does not contains the boolean '" << KEY_CLOSED << "'" << std::endl;
+            std::cerr << rawPolygon.toString().toStdString() << std::endl;
+            return;
+        }
+        bool closed = polygon[KEY_CLOSED].toBool();
+
+        if (!polygon.contains(KEY_POINTS) || !polygon[KEY_POINTS].isArray())
+        {
+            std::cerr << "The following polygon does not contains the array '" << KEY_POINTS << "'" << std::endl;
+            std::cerr << rawPolygon.toString().toStdString() << std::endl;
+            return;
+        }
+
+        auto points = polygon[KEY_POINTS].toArray();
+
+        QPoint firstPoint;
+        QPoint lastPoint;
+
+        for (auto rawPoint : points)
+        {
+            if (!rawPoint.isObject())
+            {
+                std::cerr << "The following point is not an object" << std::endl;
+                std::cerr << rawPoint.toString().toStdString() << std::endl;
+                return;
+            }
+            auto point = rawPoint.toObject();
+            if (!point.contains(KEY_X) || !point.contains(KEY_Y) ||
+                    !point[KEY_X].isDouble() || !point[KEY_Y].isDouble())
+            {
+                std::cerr << "The following point does not contains the doubles '" << KEY_X << "' and/or '" << KEY_Y << "'" << std::endl;
+                std::cerr << rawPoint.toString().toStdString() << std::endl;
+                return;
+            }
+            QPoint currentPoint = QPoint{point[KEY_X].toInt() * 10, point[KEY_Y].toInt() * 10};
+            if (firstPoint == QPoint{})
+                firstPoint = currentPoint;
+            else
+                scene->addLine(QLine(lastPoint, currentPoint), pen);
+
+            lastPoint = currentPoint;
+        }
+        if (closed)
+        {
+            scene->addLine(QLine(lastPoint, firstPoint), pen);
+        }
+    }
 }
 
 
