@@ -12,12 +12,16 @@ const CENTER_X: f32 = 1.; // position of the 0
 const CENTER_Y: f32 = 1.5;
 const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
 
+const UNCHARTED: i8 = 0;
+const SEEN_FREE: i8 = 1;
+const BLOCKED: i8 = -1;
+
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
     all_positions: Vec<Position>,
     collisions: Vec<Point>,
-    map_seen: Array2<f32>,
+    map_seen: Array2<i8>,
 }
 
 /// position in meters
@@ -40,9 +44,10 @@ impl AI {
             app_id,
             all_positions: vec![Position::default()],
             collisions: Vec::new(),
-            map_seen: Array2::<f32>::zeros((200, 300)), // ça devrait être MAP_X etc mais j'y arrive pas et ça me fait chier
+            map_seen: Array2::<i8>::zeros((200, 300)), // ça devrait être MAP_X etc mais j'y arrive pas et ça me fait chier
         }
     }
+    
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
         self.mark_seen_circle(0.1);
@@ -75,7 +80,7 @@ impl AI {
                 let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
                 // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
                 if dist <= radius * radius {
-                    self.map_seen[(ix as usize, iy as usize)] = 1.;
+                    self.map_seen[(ix as usize, iy as usize)] = SEEN_FREE;
                 }
             }
         }
@@ -96,8 +101,10 @@ impl AI {
         );
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
-            if *seen > 0. {
-                img[(x as u32, y as u32)] = Rgb([127, 127, 127]);
+            if *seen == SEEN_FREE {
+                img[(x as u32, y as u32)] = Rgb([200, 200, 200]);
+            } else if *seen == BLOCKED {
+                img[(x as u32, y as u32)] = Rgb([0, 0, 0]);
             }
         }
 
