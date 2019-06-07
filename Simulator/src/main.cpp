@@ -8,6 +8,7 @@
 #include <QObject>
 #include "mainwindow.h"
 #include "tester.h"
+#include "EventHandler.hpp"
 
 int main(int argc, char** argv)
 {
@@ -19,8 +20,15 @@ int main(int argc, char** argv)
 
     app.setOrganizationName("SR05-project");
     app.setApplicationName("Simulateur");
+
+    EventHandler eventHandler;
+
     MainWindow *w = new MainWindow(robotList);
     w->show();
+
+    w->installEventFilter(&eventHandler);
+    QObject::connect(&eventHandler, SIGNAL(newRobot()), w, SLOT(createNewRobot()));
+
     // Generates random robots and objects for testing puroposes
     //Tester t(w, 3000);
     Robot::setSimulationOutFifo("simulIn");
@@ -32,14 +40,7 @@ int main(int argc, char** argv)
 
     std::thread listener(&Router::listen,&router,"simulIn");
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    robotList->createRobotAsync(1, "robot1");
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    robotList->createRobotAsync(2, "robot2");
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    robotList->createRobotAsync(3, "robot3");
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    robotList->createRobotAsync(4, "robot4");
+
 
     int ret = app.exec();
 
