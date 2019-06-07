@@ -128,3 +128,15 @@ impl AI {
         ));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pixels_pos_test() {
+        let pix = (MAP_PWIDTH as i32 / 2, MAP_PHEIGHT as i32 / 2);
+        assert_eq!(pixels_to_pos(pix), Point::zero());
+        assert_eq!(pos_to_pixels(Point::zero()), pix);
+    }
+}
