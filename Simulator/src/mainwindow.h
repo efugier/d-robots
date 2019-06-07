@@ -46,6 +46,14 @@ public slots:
 protected:
     unsigned int m_lastId = 0;
 
+    void loadMap();
+
+private:
+    static constexpr inline char KEY_POLYGONS[] = "polygons";
+    static constexpr inline char KEY_POINTS[] = "points";
+    static constexpr inline char KEY_CLOSED[] = "is_closed";
+    static constexpr inline char KEY_X[] = "x";
+    static constexpr inline char KEY_Y[] = "y";
 };
 
 #endif // MAINWINDOW_H
