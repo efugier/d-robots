@@ -131,17 +131,11 @@ impl AI {
         if self.map_seen[xy] != SEEN_FREE {
             return false;
         }
-        let mut uncharted_neighborhood = iproduct!(
+        iproduct!(
             xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
             xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
         )
-        .filter(|&coords| coords != xy && self.map_seen[coords] == UNCHARTED);
-
-        if uncharted_neighborhood.next().is_none() {
-            false
-        } else {
-            true
-        }
+        .any(|coords| coords != xy && self.map_seen[coords] == UNCHARTED)
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
