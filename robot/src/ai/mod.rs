@@ -11,6 +11,8 @@ const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
 const CENTER_X: f32 = 1.; // position of the 0
 const CENTER_Y: f32 = 1.5;
 const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
+const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
+const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 
 const UNCHARTED: i8 = 0;
 const SEEN_FREE: i8 = 1;
@@ -44,10 +46,10 @@ impl AI {
             app_id,
             all_positions: vec![Position::default()],
             collisions: Vec::new(),
-            map_seen: Array2::<i8>::zeros((200, 300)), // ça devrait être MAP_X etc mais j'y arrive pas et ça me fait chier
+            map_seen: Array2::<i8>::zeros((MAP_PWIDTH, MAP_PHEIGHT)),
         }
     }
-    
+
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
         self.mark_seen_circle(0.1);
