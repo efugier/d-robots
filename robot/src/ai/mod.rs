@@ -59,8 +59,7 @@ impl AI {
         if let Some(p) = self.where_do_we_go() {
             let delta = (p - self.all_positions[0].p).normalized() * 0.1;
             robot.go_to(&(self.all_positions[0].p + delta));
-        }
-        else {
+        } else {
             log::error!("nowhere to go");
         }
     }
@@ -108,13 +107,12 @@ impl AI {
         let pos = &self.all_positions[0];
         // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
         let front = pos.p + Point { x: 0., y: 0.1 }.rotate_deg(pos.a);
-        self
-            .detect_frontiers()
+        self.detect_frontiers()
             .iter()
             .map(|p| (p, (*p - front).sq_norm()))
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
             .map(|(p, _)| *p)
-            // .unwrap_or(&Point::zero())
+        // .unwrap_or(&Point::zero())
     }
 
     /// A frontier is a SEEN_FREE pixel with at least one UNCHARTED pixel
@@ -137,8 +135,7 @@ impl AI {
             xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
             xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
         )
-        .filter(|&(x, y)| x == xy.0 && y == xy.1)
-        .filter(|&coords| self.map_seen[coords] != UNCHARTED);
+        .filter(|&coords| coords != xy && self.map_seen[coords] == UNCHARTED);
 
         if uncharted_neighborhood.next().is_none() {
             false
