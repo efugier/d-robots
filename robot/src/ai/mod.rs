@@ -3,6 +3,8 @@ use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
 use imageproc::pixelops::interpolate;
 use ndarray::Array2;
 
+use itertools::iproduct;
+
 use crate::app::AppId;
 use crate::map::{Point, Position};
 use crate::robot::Robot;
@@ -131,24 +133,18 @@ impl AI {
         if self.map_seen[xy] != SEEN_FREE {
             return false;
         }
-        for x in -1..=1 {
-            for y in -1..=1 {
-                if x == 0 && y == 0 {
-                    continue;
-                }
-                let x = xy.0 as i32 + x;
-                let y = xy.1 as i32 + y;
-                if 0 <= x
-                    && x < MAP_PWIDTH as i32
-                    && 0 <= y
-                    && y < MAP_PHEIGHT as i32
-                    && self.map_seen[(x as usize, y as usize)] == UNCHARTED
-                {
-                    return true;
-                }
-            }
+        let mut uncharted_neighborhood = iproduct!(
+            xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
+            xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
+        )
+        .filter(|&(x, y)| x == xy.0 && y == xy.1)
+        .filter(|&coords| self.map_seen[coords] != UNCHARTED);
+
+        if uncharted_neighborhood.next().is_none() {
+            false
+        } else {
+            true
         }
-        false
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
