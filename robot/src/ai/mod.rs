@@ -11,6 +11,8 @@ const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
 const CENTER_X: f32 = 1.; // position of the 0
 const CENTER_Y: f32 = 1.5;
 const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
+const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
+const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 
 const UNCHARTED: i8 = 0;
 const SEEN_FREE: i8 = 1;
@@ -44,20 +46,19 @@ impl AI {
             app_id,
             all_positions: vec![Position::default()],
             collisions: Vec::new(),
-            map_seen: Array2::<i8>::zeros((200, 300)), // ça devrait être MAP_X etc mais j'y arrive pas et ça me fait chier
+            map_seen: Array2::<i8>::zeros((MAP_PWIDTH, MAP_PHEIGHT)),
         }
     }
-    
+
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
         self.mark_seen_circle(0.1);
 
+        println!("frontiers {:?}", self.detect_frontiers());
+
         self.all_positions[0].a += 30.;
         self.update_debug_image();
-        if m.len() < 4 {
-            return None;
-        }
-        Some(format!("I am smart and can read long sentences"))
+        Some(String::from("Ok"))
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
@@ -86,6 +87,42 @@ impl AI {
         }
     }
 
+    /// A frontier is a SEEN_FREE pixel with at least one UNCHARTED pixel
+    /// around it (including diagonal directions).
+    /// Note that points are converted back to "real" coordinates, not pixel coordinates.
+    fn detect_frontiers(&self) -> Vec<Point> {
+        self.map_seen
+            .indexed_iter()
+            .filter(|(xy, _)| self.is_frontier(*xy))
+            .map(|((x, y), _)| pixels_to_pos((x as i32, y as i32)))
+            .collect()
+    }
+
+    /// Is the xy pixel a frontier ? (SEEN_FREE and has a UNCHARTED pixel around it)
+    fn is_frontier(&self, xy: (usize, usize)) -> bool {
+        if self.map_seen[xy] != SEEN_FREE {
+            return false;
+        }
+        for x in -1..=1 {
+            for y in -1..=1 {
+                if x == 0 && y == 0 {
+                    continue;
+                }
+                let x = xy.0 as i32 + x;
+                let y = xy.1 as i32 + y;
+                if 0 <= x
+                    && x < MAP_PWIDTH as i32
+                    && 0 <= y
+                    && y < MAP_PHEIGHT as i32
+                    && self.map_seen[(x as usize, y as usize)] == UNCHARTED
+                {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
         let (x, y) = pos_to_pixels(pos.p);
         let end = pos_to_pixels((Point { x: 0., y: 0.1 }).rotate_deg(pos.a) + pos.p);
@@ -101,7 +138,9 @@ impl AI {
         );
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
-            if *seen == SEEN_FREE {
+            if self.is_frontier((x, y)) {
+                img[(x as u32, y as u32)] = Rgb([0, 200, 0]);
+            } else if *seen == SEEN_FREE {
                 img[(x as u32, y as u32)] = Rgb([200, 200, 200]);
             } else if *seen == BLOCKED {
                 img[(x as u32, y as u32)] = Rgb([0, 0, 0]);
@@ -124,5 +163,17 @@ impl AI {
             "Could not save the debug image for robot {}",
             self.app_id
         ));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pixels_pos_test() {
+        let pix = (MAP_PWIDTH as i32 / 2, MAP_PHEIGHT as i32 / 2);
+        assert_eq!(pixels_to_pos(pix), Point::zero());
+        assert_eq!(pos_to_pixels(Point::zero()), pix);
     }
 }

@@ -41,6 +41,7 @@ impl Robot {
             rx,
         )
     }
+
     pub fn init(x: Distance, y: Distance, a: Angle) -> (Self, mpsc::Receiver<Event>) {
         let (app_tx, rx) = mpsc::channel();
         (
@@ -55,9 +56,11 @@ impl Robot {
             rx,
         )
     }
+
     fn send_to_app(&self, event: Event) {
         self.app_tx.send(event).unwrap();
     }
+
     // not sure if this deserve its own function
     // TODO: check number of use cases in the near future
     #[cfg(debug_assertions)]
@@ -68,6 +71,7 @@ impl Robot {
             tx.send(event).unwrap();
         });
     }
+
     pub fn go_to(&mut self, dest: &Point) {
         let trajectory = Segment(self.pos.p, *dest);
         let (t, final_pos) = if let Some(stop) = self.actual_map.first_intersection(&trajectory) {
@@ -80,17 +84,21 @@ impl Robot {
         self.send_to_app_delayed(Reached(final_pos), t);
         self.pos.p = final_pos;
     }
+
     pub fn forward(&mut self, dist: Distance) {
         let dest = self.pos.p + Point { x: 0., y: dist }.rotate(self.pos.a);
         self.go_to(&dest);
     }
+    
     pub fn turn(&mut self, angle: Angle) {
         self.pos.a = (self.pos.a + angle) % (2. * PI);
     }
+
     /// return the last 10 acceleration norms
     pub fn lacc(angle: Angle) {
         unimplemented!()
     }
+
     /// tune the collision parameters
     /// `nb_acc_for_mean` the number of acceleration norms used to compute a mean
     /// `nb_consec_mean` number of consecutive means to be smaller than `mean_threshold`
