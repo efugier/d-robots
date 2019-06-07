@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 use std::path::PathBuf;
 
 mod polygon;
@@ -45,6 +45,27 @@ impl Sub for Point {
         Point {
             x: self.x - other.x,
             y: self.y - other.y,
+        }
+    }
+}
+
+impl Mul<Distance> for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: Distance) -> Self {
+        Point {
+            x: self.x * rhs,
+            y: self.y * rhs,
+        }
+    }
+}
+
+impl Div<Distance> for Point {
+    type Output = Self;
+    fn div(self, rhs: Distance) -> Self {
+        Point {
+            x: self.x / rhs,
+            y: self.y / rhs,
         }
     }
 }
@@ -104,6 +125,14 @@ impl Point {
 
     pub fn sq_norm(&self) -> Distance {
         self.dot_prod(self)
+    }
+
+    pub fn norm(&self) -> Distance {
+        self.sq_norm().sqrt()
+    }
+
+    pub fn normalized(&self) -> Self {
+        *self / self.norm()
     }
 
     pub fn sq_dist(&self, other: &Self) -> Distance {
@@ -266,7 +295,10 @@ mod tests {
         let path: PathBuf = "test_map_aljjbdbclwhblaszblxaksjxsa.json".into();
         let test_map = PolyMap::default();
 
-        assert!(test_map.save_to_file(&path).is_ok(), "failed to save the map");
+        assert!(
+            test_map.save_to_file(&path).is_ok(),
+            "failed to save the map"
+        );
 
         assert!(PolyMap::from_file(&path).is_ok(), "failed to read the map");
 

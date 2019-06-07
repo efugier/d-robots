@@ -89,7 +89,7 @@ impl Robot {
         let dest = self.pos.p + Point { x: 0., y: dist }.rotate(self.pos.a);
         self.go_to(&dest);
     }
-    
+
     pub fn turn(&mut self, angle: Angle) {
         self.pos.a = (self.pos.a + angle) % (2. * PI);
     }

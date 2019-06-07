@@ -3,8 +3,11 @@ use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
 use imageproc::pixelops::interpolate;
 use ndarray::Array2;
 
+use itertools::iproduct;
+
 use crate::app::AppId;
 use crate::map::{Point, Position};
+use crate::robot::Robot;
 
 const MAP_WIDTH: u32 = 2;
 const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
@@ -50,6 +53,17 @@ impl AI {
         }
     }
 
+    pub fn update(&mut self, robot: &mut Robot) {
+        self.mark_seen_circle(0.1);
+
+        if let Some(p) = self.where_do_we_go() {
+            let delta = (p - self.all_positions[0].p).normalized() * 0.1;
+            robot.go_to(&(self.all_positions[0].p + delta));
+        } else {
+            log::error!("nowhere to go");
+        }
+    }
+
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
         self.mark_seen_circle(0.1);
@@ -87,6 +101,20 @@ impl AI {
         }
     }
 
+    /// https://www.youtube.com/watch?v=1w7OgIMMRc4
+    /// If not frontier is detected, go back to the origin
+    fn where_do_we_go(&self) -> Option<Point> {
+        let pos = &self.all_positions[0];
+        // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
+        let front = pos.p + Point { x: 0., y: 0.1 }.rotate_deg(pos.a);
+        self.detect_frontiers()
+            .iter()
+            .map(|p| (p, (*p - front).sq_norm()))
+            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
+            .map(|(p, _)| *p)
+        // .unwrap_or(&Point::zero())
+    }
+
     /// A frontier is a SEEN_FREE pixel with at least one UNCHARTED pixel
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
@@ -103,24 +131,17 @@ impl AI {
         if self.map_seen[xy] != SEEN_FREE {
             return false;
         }
-        for x in -1..=1 {
-            for y in -1..=1 {
-                if x == 0 && y == 0 {
-                    continue;
-                }
-                let x = xy.0 as i32 + x;
-                let y = xy.1 as i32 + y;
-                if 0 <= x
-                    && x < MAP_PWIDTH as i32
-                    && 0 <= y
-                    && y < MAP_PHEIGHT as i32
-                    && self.map_seen[(x as usize, y as usize)] == UNCHARTED
-                {
-                    return true;
-                }
-            }
+        let mut uncharted_neighborhood = iproduct!(
+            xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
+            xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
+        )
+        .filter(|&coords| coords != xy && self.map_seen[coords] == UNCHARTED);
+
+        if uncharted_neighborhood.next().is_none() {
+            false
+        } else {
+            true
         }
-        false
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
