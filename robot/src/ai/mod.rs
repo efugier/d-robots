@@ -5,6 +5,7 @@ use ndarray::Array2;
 
 use crate::app::AppId;
 use crate::map::{Point, Position};
+use crate::robot::Robot;
 
 const MAP_WIDTH: u32 = 2;
 const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
@@ -50,6 +51,18 @@ impl AI {
         }
     }
 
+    pub fn update(&mut self, robot: &mut Robot) {
+        self.mark_seen_circle(0.1);
+
+        if let Some(p) = self.where_do_we_go() {
+            let delta = (p - self.all_positions[0].p).normalized() * 0.1;
+            robot.go_to(&(self.all_positions[0].p + delta));
+        }
+        else {
+            log::error!("nowhere to go");
+        }
+    }
+
     // demo app interaction
     pub fn be_smart(&mut self, m: &str) -> Option<String> {
         self.mark_seen_circle(0.1);
@@ -85,6 +98,21 @@ impl AI {
                 }
             }
         }
+    }
+
+    /// https://www.youtube.com/watch?v=1w7OgIMMRc4
+    /// If not frontier is detected, go back to the origin
+    fn where_do_we_go(&self) -> Option<Point> {
+        let pos = &self.all_positions[0];
+        // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
+        let front = pos.p + Point { x: 0., y: 0.1 }.rotate_deg(pos.a);
+        self
+            .detect_frontiers()
+            .iter()
+            .map(|p| (p, (*p - front).sq_norm()))
+            .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
+            .map(|(p, _)| *p)
+            // .unwrap_or(&Point::zero())
     }
 
     /// A frontier is a SEEN_FREE pixel with at least one UNCHARTED pixel
