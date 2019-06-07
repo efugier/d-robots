@@ -60,6 +60,12 @@ void Router::worker(std::string message)
         return;
     }
     auto jsonPos = jsonObj[KEY_POSITION].toObject();
+    if (!jsonPos.contains(KEY_POINT) || !jsonPos[KEY_POINT].isObject())
+    {
+        std::cerr << "Field '" << KEY_POSITION << "' does not contains object " << KEY_POINT << std::endl;
+        return;
+    }
+    jsonPos = jsonPos[KEY_POINT].toObject();
     if (!jsonPos.contains(KEY_X) || !jsonPos.contains(KEY_Y) || !jsonPos[KEY_X].isDouble() || !jsonPos[KEY_Y].isDouble())
     {
         std::cerr << "Field '" << KEY_POSITION << "' does not contains doubles " << KEY_X << " and/or " << KEY_Y<< std::endl;

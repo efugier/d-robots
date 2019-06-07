@@ -29,6 +29,7 @@ private:
 
     static constexpr inline char KEY_SENDER_ID[] = "sender_id";
     static constexpr inline char KEY_POSITION[] = "pos";
+    static constexpr inline char KEY_POINT[] = "p";
     static constexpr inline char KEY_X[] = "x";
     static constexpr inline char KEY_Y[] = "y";
 };
