@@ -7,14 +7,16 @@ SOURCES += \
     src/Router.cpp \
     src/Robot.cpp \
     src/RobotsHandler.cpp \
-    src/mainwindow.cpp
+    src/mainwindow.cpp \
+    src/EventHandler.cpp
 
 HEADERS += \
     src/Router.hpp \
     src/Robot.hpp \
     src/RobotsHandler.hpp \
     src/mainwindow.h \
-    src/tester.h
+    src/tester.h \
+    src/EventHandler.hpp
 
 DISTFILES +=
 

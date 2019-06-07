@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <iostream>
 #include <QString>
+#include <QKeyEvent>
 
 MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent) :
     QMainWindow(parent), m_robotList(robotList)
@@ -47,4 +48,15 @@ void MainWindow::addObject(double x, double y){
     QGraphicsRectItem *rect = scene->addRect(x,y,ITEM_WIDTH,ITEM_HEIGHT);
     rect->setToolTip(QString::fromStdString("Obstacle : "+std::to_string(x)+","+std::to_string(y)));
     view->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void MainWindow::createNewRobot()
+{
+    if (m_robotList)
+    {
+        m_robotList->createRobotAsync(++m_lastId, "", [this](Robot* r){
+            this->updateRobotPosition(r->id());
+        });
+
+    }
 }

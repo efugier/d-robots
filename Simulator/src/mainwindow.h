@@ -22,8 +22,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     // Image size for robots and objects
-    const int ITEM_HEIGHT = 60;
-    const int ITEM_WIDTH = 60;
+    const int ITEM_HEIGHT = 10;
+    const int ITEM_WIDTH = 10;
 
     // Minimum size of the map view
     const double MIN_SCENE_HEIGHT = 300;
@@ -41,7 +41,10 @@ public:
 public slots:
     void updateRobotPosition(unsigned int id);
     void addObject(double x, double y);
+    void createNewRobot();
 
+protected:
+    unsigned int m_lastId = 0;
 
 };
 
