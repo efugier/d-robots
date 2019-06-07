@@ -44,11 +44,8 @@ pub struct App {
 impl App {
     pub fn new(id: AppId, output: PathBuf, input: PathBuf) -> Self {
         let (self_tx, self_rx) = mpsc::channel();
-
         let (robot, robot_rx) = Robot::new();
-
         let events = Events::new(input, robot_rx, self_rx);
-
         let output = OpenOptions::new()
             .write(true)
             .append(true)
@@ -91,6 +88,9 @@ impl App {
             Public(format!("Hello there, I am {}!", self.id)),
         );
         self.send_to_network(greeting_message);
+
+        self.ai.update(&mut self.robot);
+
         loop {
             // Handle events
             match self.events.next()? {
@@ -99,6 +99,7 @@ impl App {
                     log::info!("boom {:?}", e);
                     break;
                 }
+
                 DistantInput(m) => {
                     log::trace!("message {:?}", m);
                     // AI interaction demo
