@@ -60,6 +60,7 @@ impl AI {
             app_id,
             all_positions: vec![Position::default()],
             collisions: Vec::new(),
+            // the map is uncharted a the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
         }
     }
@@ -126,7 +127,7 @@ impl AI {
         // .unwrap_or(&Point::zero())
     }
 
-    /// A frontier is a SEEN_FREE pixel with at least one UNCHARTED pixel
+    /// A frontier is a SeenFree pixel with at least one Uncharted pixel
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
     fn detect_frontiers(&self) -> Vec<Point> {
@@ -137,7 +138,7 @@ impl AI {
             .collect()
     }
 
-    /// Is the xy pixel a frontier ? (SEEN_FREE and has a UNCHARTED pixel around it)
+    /// Is the xy pixel a frontier ? (SeenFree and has an Uncharted pixel around it)
     fn is_frontier(&self, xy: (usize, usize)) -> bool {
         self.map_seen[xy] == SeenFree
             && iproduct!(
