@@ -103,7 +103,7 @@ impl App {
                 DistantInput(m) => {
                     log::trace!("message {:?}", m);
                     // AI interaction demo
-                    if let Some(msg) = self.ai.be_smart(&m) {
+                    if let Some(msg) = self.ai.be_smart() {
                         println!("{}", msg);
                     }
 

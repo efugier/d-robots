@@ -17,16 +17,27 @@ const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
 const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
 const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 
-const UNCHARTED: i8 = 0;
-const SEEN_FREE: i8 = 1;
-const BLOCKED: i8 = -1;
+#[derive(Debug, PartialEq)]
+pub enum CellState {
+    Uncharted,
+    SeenFree,
+    Blocked,
+}
+
+impl Default for CellState {
+    fn default() -> Self {
+        Uncharted
+    }
+}
+
+use CellState::*;
 
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
     all_positions: Vec<Position>,
     collisions: Vec<Point>,
-    map_seen: Array2<i8>,
+    map_seen: Array2<CellState>,
 }
 
 /// position in meters
@@ -49,7 +60,7 @@ impl AI {
             app_id,
             all_positions: vec![Position::default()],
             collisions: Vec::new(),
-            map_seen: Array2::<i8>::zeros((MAP_PWIDTH, MAP_PHEIGHT)),
+            map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
         }
     }
 
@@ -65,7 +76,7 @@ impl AI {
     }
 
     // demo app interaction
-    pub fn be_smart(&mut self, m: &str) -> Option<String> {
+    pub fn be_smart(&mut self) -> Option<String> {
         self.mark_seen_circle(0.1);
 
         println!("frontiers {:?}", self.detect_frontiers());
@@ -95,7 +106,7 @@ impl AI {
                 let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
                 // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
                 if dist <= radius * radius {
-                    self.map_seen[(ix as usize, iy as usize)] = SEEN_FREE;
+                    self.map_seen[(ix as usize, iy as usize)] = SeenFree;
                 }
             }
         }
@@ -128,12 +139,12 @@ impl AI {
 
     /// Is the xy pixel a frontier ? (SEEN_FREE and has a UNCHARTED pixel around it)
     fn is_frontier(&self, xy: (usize, usize)) -> bool {
-        self.map_seen[xy] == SEEN_FREE
+        self.map_seen[xy] == SeenFree
             && iproduct!(
                 xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
                 xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
             )
-            .any(|coords| coords != xy && self.map_seen[coords] == UNCHARTED)
+            .any(|coords| coords != xy && self.map_seen[coords] == Uncharted)
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
@@ -153,9 +164,9 @@ impl AI {
         for ((x, y), seen) in self.map_seen.indexed_iter() {
             if self.is_frontier((x, y)) {
                 img[(x as u32, y as u32)] = Rgb([0, 200, 0]);
-            } else if *seen == SEEN_FREE {
+            } else if let SeenFree = seen {
                 img[(x as u32, y as u32)] = Rgb([200, 200, 200]);
-            } else if *seen == BLOCKED {
+            } else if let SeenFree = seen {
                 img[(x as u32, y as u32)] = Rgb([0, 0, 0]);
             }
         }
