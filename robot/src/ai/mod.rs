@@ -128,14 +128,12 @@ impl AI {
 
     /// Is the xy pixel a frontier ? (SEEN_FREE and has a UNCHARTED pixel around it)
     fn is_frontier(&self, xy: (usize, usize)) -> bool {
-        if self.map_seen[xy] != SEEN_FREE {
-            return false;
-        }
-        iproduct!(
-            xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
-            xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
-        )
-        .any(|coords| coords != xy && self.map_seen[coords] == UNCHARTED)
+        self.map_seen[xy] == SEEN_FREE
+            && iproduct!(
+                xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
+                xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
+            )
+            .any(|coords| coords != xy && self.map_seen[coords] == UNCHARTED)
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
