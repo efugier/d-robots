@@ -163,12 +163,11 @@ impl AI {
         );
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
-            if self.is_frontier((x, y)) {
-                img[(x as u32, y as u32)] = Rgb([0, 200, 0]);
-            } else if let SeenFree = seen {
-                img[(x as u32, y as u32)] = Rgb([200, 200, 200]);
-            } else if let Blocked = seen {
-                img[(x as u32, y as u32)] = Rgb([0, 0, 0]);
+            match seen {
+                _ if self.is_frontier((x, y)) => img[(x as u32, y as u32)] = Rgb([0, 200, 0]),
+                SeenFree => img[(x as u32, y as u32)] = Rgb([200, 200, 200]),
+                Blocked => img[(x as u32, y as u32)] = Rgb([0, 0, 0]),
+                _ => (),
             }
         }
 
