@@ -106,19 +106,10 @@ impl Robot {
         unimplemented!()
     }
 
-    /// Conditional compilation demo
-    pub fn be_a_robot(&self) {
-        #[cfg(debug_assertions)]
-        {
-            let ttl = Duration::from_secs(8);
-            println!("I am in debug mode");
-            println!("And thus going to kill myself in {:?}", ttl);
-            self.send_to_app_delayed(Collision(self.pos.p.clone()), ttl);
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            println!("I am in release mode");
-        }
+    pub fn start(&self) {
+        println!("Hello from Robot :)");
+        // let ttl = Duration::from_secs(1);
+        // self.send_to_app_delayed(Collision(self.pos.p.clone()), ttl);
     }
 }
 
