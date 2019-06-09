@@ -81,7 +81,7 @@ impl App {
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.robot.be_a_robot();
+        self.robot.start();
         let greeting_message = Msg::new(
             self.id,
             self.robot.pos.clone(),
