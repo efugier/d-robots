@@ -1,13 +1,13 @@
+use std::collections::HashMap;
+
 use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
 use imageproc::pixelops::interpolate;
+use itertools::iproduct;
+use log;
 use ndarray::Array2;
 use ndarray::Axis;
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
-
-use itertools::iproduct;
 
 use crate::app::AppId;
 use crate::map::{Point, Position};
@@ -107,7 +107,6 @@ impl AI {
     pub fn be_smart(&mut self) -> Option<String> {
         self.mark_seen_circle(0.1);
 
-        println!("frontiers {:?}", self.detect_frontiers());
         self.all_positions
             .get_mut(&self.app_id)
             .expect("self position is missing from all_positions")
@@ -128,6 +127,7 @@ impl AI {
             .expect("self position is missing from all_positions")
             .p;
         let (rx, ry) = pos_to_pixels(robot);
+        log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as i32;
         for y in -radius_p..=radius_p {
             let iy = ry + y;
@@ -142,6 +142,7 @@ impl AI {
                 }
 
                 let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
+                // log::info!("pixel to pos {:?} {:?}", (ix, iy), pixels_to_pos((ix, iy)));
                 // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
                 if dist <= radius * radius {
                     self.map_seen[(ix as usize, iy as usize)] = SeenFree;
