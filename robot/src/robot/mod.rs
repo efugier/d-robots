@@ -81,7 +81,10 @@ impl Robot {
             let t = duration_from_to(self.pos.p, *dest);
             (t, *dest)
         };
-        self.pos.p = final_pos;
+        self.pos = Position {
+            p: final_pos,
+            a: (*dest - self.pos.p).rotate_deg(-90.0).angle(),
+        };
         self.send_to_app_delayed(Reached(self.pos.clone()), t);
     }
 
