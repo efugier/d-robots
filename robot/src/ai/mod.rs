@@ -191,10 +191,7 @@ impl AI {
     }
 
     fn update_debug_image(&self) {
-        let mut img = RgbImage::new(
-            MAP_WIDTH * PIXELS_PER_METER,
-            MAP_HEIGHT * PIXELS_PER_METER,
-        );
+        let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
             img[(x as u32, y as u32)] = match seen {
