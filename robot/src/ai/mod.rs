@@ -152,8 +152,9 @@ impl AI {
                 let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
                 // log::info!("pixel to pos {:?} {:?}", (ix, iy), pixels_to_pos((ix, iy)));
                 // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
-                if dist <= radius * radius {
-                    self.map_seen[(ix as usize, iy as usize)] = SeenFree;
+                let ixy = (ix as usize, iy as usize);
+                if dist <= radius * radius && self.map_seen[ixy] == Uncharted {
+                    self.map_seen[ixy] = SeenFree;
                 }
             }
         }
