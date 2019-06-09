@@ -2,6 +2,10 @@ use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
 use imageproc::pixelops::interpolate;
 use ndarray::Array2;
+use ndarray::Axis;
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 use itertools::iproduct;
 
@@ -17,7 +21,7 @@ const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
 const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
 const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum CellState {
     Uncharted,
     SeenFree,
@@ -35,7 +39,7 @@ use CellState::*;
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
-    all_positions: Vec<Position>,
+    all_positions: HashMap<AppId, Position>,
     collisions: Vec<Point>,
     map_seen: Array2<CellState>,
 }
@@ -56,23 +60,42 @@ fn pixels_to_pos(p: (i32, i32)) -> Point {
 
 impl AI {
     pub fn new(app_id: AppId) -> Self {
-        AI {
+        let mut ai = AI {
             app_id,
-            all_positions: vec![Position::default()],
+            all_positions: HashMap::new(),
             collisions: Vec::new(),
             // the map is uncharted a the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
-        }
+        };
+        ai.all_positions.insert(ai.app_id, Position::default());
+        return ai;
     }
 
     pub fn update(&mut self, robot: &mut Robot) {
         self.mark_seen_circle(0.1);
 
         if let Some(p) = self.where_do_we_go() {
-            let delta = (p - self.all_positions[0].p).normalized() * 0.1;
-            robot.go_to(&(self.all_positions[0].p + delta));
+            let delta = (p - self
+                .all_positions
+                .get(&self.app_id)
+                .expect("self position is missing from all_positions").p).normalized() * 0.1;
+            robot.go_to(&(self
+                .all_positions
+                .get(&self.app_id)
+                .expect("self position is missing from all_positions").p + delta));
         } else {
             log::error!("nowhere to go");
+        }
+    }
+
+    pub fn update_map(&mut self, update: Array2<CellState>){
+        for (i,j) in iproduct!(0..self.map_seen.len_of(Axis(0)),0..self.map_seen.len_of(Axis(1))){
+            if update[[i,j]] == CellState::Blocked {
+                self.map_seen[[i,j]] = CellState::Blocked;
+            }
+            else if update[[i,j]] == CellState::SeenFree && self.map_seen[[i,j]] != CellState::Blocked {
+                self.map_seen[[i,j]] = CellState::SeenFree;
+            }
         }
     }
 
@@ -81,15 +104,25 @@ impl AI {
         self.mark_seen_circle(0.1);
 
         println!("frontiers {:?}", self.detect_frontiers());
-
-        self.all_positions[0].a += 30.;
+        self.all_positions
+            .get_mut(&self.app_id)
+            .expect("self position is missing from all_positions")
+            .a += 30.;
         self.update_debug_image();
         Some(String::from("Ok"))
     }
 
+    pub fn update_robot_position(&mut self, id: AppId, pos: Position) {
+        self.all_positions.insert(id, pos);
+    }
+
     /// mark the area around the robot as seen (in a circle, radius in meters)
     fn mark_seen_circle(&mut self, radius: f32) {
-        let robot = self.all_positions[0].p;
+        let robot = self
+            .all_positions
+            .get(&self.app_id)
+            .expect("self position is missing from all_positions")
+            .p;
         let (rx, ry) = pos_to_pixels(robot);
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as i32;
         for y in -radius_p..=radius_p {
@@ -116,7 +149,10 @@ impl AI {
     /// https://www.youtube.com/watch?v=1w7OgIMMRc4
     /// If not frontier is detected, go back to the origin
     fn where_do_we_go(&self) -> Option<Point> {
-        let pos = &self.all_positions[0];
+        let pos = &self
+            .all_positions
+            .get(&self.app_id)
+            .expect("self position is missing from all_positions");
         // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
         let front = pos.p + Point { x: 0., y: 0.1 }.rotate_deg(pos.a);
         self.detect_frontiers()
@@ -171,7 +207,7 @@ impl AI {
             }
         }
 
-        for (i, pos) in self.all_positions.iter().enumerate() {
+        for (i, pos) in self.all_positions.values().enumerate() {
             let color = if i == 0 {
                 Rgb([255, 0, 0])
             } else {
