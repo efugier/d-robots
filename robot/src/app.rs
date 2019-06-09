@@ -94,10 +94,16 @@ impl App {
         loop {
             // Handle events
             match self.events.next()? {
-                // Robot message demo
-                RobotMessage(e) => {
-                    log::info!("boom {:?}", e);
-                    break;
+                RobotMessage(msg) => {
+                    log::info!("RobotMessage {:?}", msg);
+
+                    match msg {
+                        robot::Event::Reached(p) => {
+                            self.ai.update_robot_position(self.id, p);
+                            self.ai.update(&mut self.robot)
+                        }
+                        _ => break,
+                    }
                 }
 
                 DistantInput(m) => {
