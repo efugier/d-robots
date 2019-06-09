@@ -141,13 +141,13 @@ impl AI {
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as i32;
         for y in -radius_p..=radius_p {
             let iy = ry + y;
-            if iy < 0 || iy >= self.map_seen.rows() as i32 {
+            if iy < 0 || iy >= self.map_seen.cols() as i32 {
                 continue;
             }
 
             for x in -radius_p..=radius_p {
                 let ix = rx + x;
-                if ix < 0 || ix >= self.map_seen.cols() as i32 {
+                if ix < 0 || ix >= self.map_seen.rows() as i32 {
                     continue;
                 }
 
