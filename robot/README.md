@@ -5,6 +5,8 @@ An app that does app things
 
 * fowards messages on the first reception
 * can interact with an asynchronous robot simulator / interface
+
+The script `cargo_run.sh` can be used to launch the project, note that it requires a a fifo named `fifo` to run. 
 * `./cargo_run.sh` connects the app to itself and enables maximum debug level
 * `./cargo_run.sh -- release` connects the app to itself in release mode
 
