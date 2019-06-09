@@ -39,6 +39,7 @@ use CellState::*;
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
+    debug_counter: u32,
     all_positions: HashMap<AppId, Position>,
     collisions: Vec<Point>,
     map_seen: Array2<CellState>,
@@ -62,6 +63,7 @@ impl AI {
     pub fn new(app_id: AppId) -> Self {
         let mut ai = AI {
             app_id,
+            debug_counter: 0,
             all_positions: HashMap::new(),
             collisions: Vec::new(),
             // the map is uncharted at the start
@@ -205,7 +207,7 @@ impl AI {
         draw_antialiased_line_segment_mut(img, (x, y), end, color, interpolate);
     }
 
-    fn update_debug_image(&self) {
+    fn update_debug_image(&mut self) {
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
@@ -229,10 +231,20 @@ impl AI {
         std::fs::create_dir_all("output")
             .expect("Could not create the directory for outputing debug images");
         let path = format!("output/robot_{}.png", self.app_id);
-        img.save(path).expect(&format!(
+        // let path = format!("output/robot_{}-{}.png", self.app_id, self.debug_counter);
+        let temp = format!(
+            "output/robot_{}-{}_tmp.png",
+            self.app_id, self.debug_counter
+        );
+        self.debug_counter += 1;
+        img.save(temp.clone()).expect(&format!(
             "Could not save the debug image for robot {}",
             self.app_id
         ));
+        std::fs::rename(temp, path).expect(&format!(
+            "Could not save the debug image for robot {}",
+            self.app_id
+        )); // for atomic writes
     }
 }
 
