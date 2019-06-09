@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
@@ -57,6 +58,25 @@ fn pixels_to_pos(p: (i32, i32)) -> Point {
     let x = p.0 as f32 / PIXELS_PER_METER as f32 - CENTER_X;
     let y = -p.1 as f32 / PIXELS_PER_METER as f32 + CENTER_Y;
     Point { x, y }
+}
+
+//Convert the position of a node in a string, format: "x/y"
+fn pos_to_string(point: Point) -> String {
+    let Point { x, y } = point;
+    let string_x: String = x.to_string();
+    let string_y: String = y.to_string();
+    let string = format!("{}/{}", string_x, string_y);
+    string
+}
+
+//Calculate priority with heuristic
+pub fn heuristic(next_point: Point, end_point: Point) -> f32 {
+    let dx = next_point.x - end_point.x;
+    let dx = dx.abs();
+    let dy = next_point.y - end_point.y;
+    let dy = dy.abs();
+    let distance = sqrt(dx*dx + dy*dy);
+    distance
 }
 
 impl AI {
@@ -240,6 +260,72 @@ impl AI {
             "Could not save the debug image for robot {}",
             self.app_id
         )); // for atomic writes
+    }
+
+    //Find path to start point to end point
+    pub fn pathFindingAlgorithm(start_point: Point, end_point: Point, map_seen: Array2<CellState>) -> Vec {
+        // Create a map sorted by key (so sorted by priority) that save explored nodes. Save their priority and position (Point).
+        let mut frontier = BTreeMap::new();
+        let priority = heuristic(start_point, end_point);
+        frontier.insert(priority as i32, start_point);
+
+        // Create a map that contains the position of a node (String) and the position of the parent's node (String).
+        let mut came_from = HashMap::new();
+        let start_point_string: String = pos_to_string(start_point);
+        //Start point doesn't have any parent. It's represented by an empty string
+        came_from.insert(&start_point_string, "" as String);
+
+        // Current node explored
+        let mut current_node: Point;
+        let mut current_node_string: String;
+
+        // Do while there is still a node to explore
+        while !frontier.is_empty() {
+            // Get and remove the first item of the map frontier, which is the node with the lowest priority, so the node the nearest from the end point
+            let key = *frontier.keys().next().unwrap();
+            current_node = *frontier.get(&key).unwrap();
+            current_node_string = pos_to_string(current_node);
+            frontier.remove(&key);
+
+            // Check if current node is not the end node
+            if current_node_string != pos_to_string(end_point) {
+                // Get all neighbour nodes: each pixel around current_node in 8 directions
+                let neighbours = Vec::New();
+                neighbours.push(Point { x: current_node.x - 1, y: current_node.y + 1});
+                neighbours.push(Point { x: current_node.x, y: current_node.y + 1});
+                neighbours.push(Point { x: current_node.x + 1, y: current_node.y + 1});
+                neighbours.push(Point { x: current_node.x - 1, y: current_node.y});
+                neighbours.push(Point { x: current_node.x + 1, y: current_node.y});
+                neighbours.push(Point { x: current_node.x - 1, y: current_node.y - 1});
+                neighbours.push(Point { x: current_node.x, y: current_node.y - 1});
+                neighbours.push(Point { x: current_node.x + 1, y: current_node.y - 1});
+                // For each neighbour node, check its priority, add it to the frontier map and add its parent node to the came_from map
+                for next in neighbours {
+                    let next_string = pos_to_string(next);
+                    if !came_from.contains_key(&next_string) {
+                        let ixy = (next.x as usize, next.y as usize);
+                        if map_seen[ixy] != Blocked {
+                            // Calculate priority with heuristic
+                            let g_heuritic = heuristic(start_point, next);
+                        let h_heuristic = heuristic(next, end_point);
+                        let priority = g_heuritic + h_heuristic;
+                        frontier.insert(priority, next);
+                        came_from.insert(&next_string, current_node_string);
+                        }
+                    }
+                }
+            }
+        }
+
+        //Get path from end point to start point
+        current_node_string = pos_to_string(end_point);
+        let mut path = Vec::new();
+        while current_node_string != start_point_string {
+            path.append(&current_node);
+            current_node = came_from.get(&current_node_string).get();
+        }
+        path.append(start_point_string);
+        path
     }
 }
 
