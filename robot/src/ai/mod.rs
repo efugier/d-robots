@@ -54,7 +54,7 @@ fn pos_to_pixels(point: Point) -> (i32, i32) {
 
 fn pixels_to_pos(p: (i32, i32)) -> Point {
     let x = p.0 as f32 / PIXELS_PER_METER as f32 - CENTER_X;
-    let y = p.1 as f32 / PIXELS_PER_METER as f32 - CENTER_Y;
+    let y = -p.1 as f32 / PIXELS_PER_METER as f32 + CENTER_Y;
     Point { x, y }
 }
 
@@ -236,5 +236,13 @@ mod tests {
         let pix = (MAP_PWIDTH as i32 / 2, MAP_PHEIGHT as i32 / 2);
         assert_eq!(pixels_to_pos(pix), Point::zero());
         assert_eq!(pos_to_pixels(Point::zero()), pix);
+
+        let a = (pix.0, pix.0 + 10);
+        eprintln!("a={:?} pos={:?}", a, pixels_to_pos(a));
+        assert_eq!(pos_to_pixels(pixels_to_pos(a)), a);
+
+        let b = (pix.0 + 10, pix.0 - 5);
+        println!("a={:?} pos={:?}", b, pixels_to_pos(b));
+        assert_eq!(pos_to_pixels(pixels_to_pos(b)), b);
     }
 }
