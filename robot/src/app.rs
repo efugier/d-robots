@@ -110,8 +110,13 @@ impl App {
                     if let Ok(msg) = Msg::from_str(&m) {
                         // do something to the decoded message
                         if !self.sent_messages_ids.contains(&msg.id) {
+                            self.ai
+                                .update_robot_position(msg.id.clone(), msg.pos.clone());
                             log::info!("received, from: {} : {:?}", msg.sender_id, msg.header);
-                            self.send_to_network(msg);
+                            self.send_to_network(msg.clone());
+                        }
+                        if let MapUpdate(update) = msg.header{
+                            self.ai.update_map(update);
                         }
                     } else {
                         log::error!("could not decode {:?}", m);

@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use super::app::AppId;
+use crate::ai::CellState;
 use crate::map::Position;
+use ndarray::Array2;
 
 pub type MsgId = u32;
 
@@ -11,6 +13,7 @@ pub type MsgId = u32;
 pub enum Header {
     Private(AppId, String),
     Public(String),
+    MapUpdate(Array2<CellState>)
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
