@@ -7,10 +7,9 @@ use ndarray::Array2;
 
 pub type MsgId = u32;
 
-/// Header(Content)
 /// Defines message type
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub enum Header {
+pub enum MsgContent {
     Private(AppId, String),
     Public(String),
     MapUpdate(Array2<CellState>),
@@ -21,15 +20,15 @@ pub struct Msg {
     pub id: MsgId,
     pub sender_id: AppId,
     pub pos: Position,
-    pub header: Header,
+    pub content: MsgContent,
 }
 
 impl Msg {
-    pub fn new(sender_id: AppId, pos: Position, header: Header) -> Self {
+    pub fn new(sender_id: AppId, pos: Position, content: MsgContent) -> Self {
         Msg {
             id: rand::random(),
             sender_id,
-            header,
+            content,
             pos,
         }
     }
@@ -51,7 +50,7 @@ mod tests {
             id: rand::random(),
             sender_id: rand::random(),
             pos: Position::default(),
-            header: Header::Private(rand::random(), "I like trains !".to_string()),
+            content: MsgContent::Private(rand::random(), "I like trains !".to_string()),
         };
 
         let serialized = msg.serialize().expect("failed to serialize");

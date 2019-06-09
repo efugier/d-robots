@@ -7,7 +7,7 @@ use std::sync::mpsc;
 use log;
 
 use crate::ai::AI;
-use crate::messages::{Header::*, Msg, MsgId};
+use crate::messages::{Msg, MsgContent::*, MsgId};
 use crate::robot::{self, Robot};
 
 pub type AppId = u32;
@@ -76,7 +76,7 @@ impl App {
                 e
             );
         } else {
-            log::info!("sent, messsage: {:?}", msg.header);
+            log::info!("sent, messsage: {:?}", msg.content);
         }
     }
 
@@ -112,10 +112,10 @@ impl App {
                         if !self.sent_messages_ids.contains(&msg.id) {
                             self.ai
                                 .update_robot_position(msg.id.clone(), msg.pos.clone());
-                            log::info!("received, from: {} : {:?}", msg.sender_id, msg.header);
+                            log::info!("received, from: {} : {:?}", msg.sender_id, msg.content);
                             self.send_to_network(msg.clone());
                         }
-                        if let MapUpdate(update) = msg.header {
+                        if let MapUpdate(update) = msg.content {
                             self.ai.update_map(update);
                         }
                     } else {
