@@ -87,7 +87,7 @@ impl AI {
         }
     }
 
-    pub fn update_map(&mut self, update: Array2<CellState>) {
+    pub fn merge_maps(&mut self, update: Array2<CellState>) {
         for coords in iproduct!(
             0..self.map_seen.len_of(Axis(0)),
             0..self.map_seen.len_of(Axis(1))
