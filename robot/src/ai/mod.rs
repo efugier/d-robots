@@ -21,7 +21,7 @@ const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
 const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
 const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum CellState {
     Uncharted,
     SeenFree,
@@ -87,13 +87,18 @@ impl AI {
         }
     }
 
-    pub fn update_map(&mut self, update: Array2<CellState>){
-        for (i,j) in iproduct!(0..self.map_seen.len_of(Axis(0)),0..self.map_seen.len_of(Axis(1))){
-            if update[[i,j]] == CellState::Blocked {
-                self.map_seen[[i,j]] = CellState::Blocked;
-            }
-            else if update[[i,j]] == CellState::SeenFree && self.map_seen[[i,j]] != CellState::Blocked {
-                self.map_seen[[i,j]] = CellState::SeenFree;
+    pub fn update_map(&mut self, update: Array2<CellState>) {
+        for coords in iproduct!(
+            0..self.map_seen.len_of(Axis(0)),
+            0..self.map_seen.len_of(Axis(1))
+        ) {
+            let old = self.map_seen.get_mut(coords).unwrap();
+            match (*old, update[coords]) {
+                (SeenFree, Blocked) | (Blocked, SeenFree) => {
+                    log::error!("Received contradicting information")
+                }
+                (a, b) if b == Uncharted || a == b => (),
+                (_, new) => *old = new,
             }
         }
     }
