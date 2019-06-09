@@ -64,25 +64,24 @@ impl AI {
             app_id,
             all_positions: HashMap::new(),
             collisions: Vec::new(),
-            // the map is uncharted a the start
+            // the map is uncharted at the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
         };
         ai.all_positions.insert(ai.app_id, Position::default());
-        return ai;
+        ai
     }
 
     pub fn update(&mut self, robot: &mut Robot) {
         self.mark_seen_circle(0.1);
 
         if let Some(p) = self.where_do_we_go() {
-            let delta = (p - self
+            let self_pos = self
                 .all_positions
                 .get(&self.app_id)
-                .expect("self position is missing from all_positions").p).normalized() * 0.1;
-            robot.go_to(&(self
-                .all_positions
-                .get(&self.app_id)
-                .expect("self position is missing from all_positions").p + delta));
+                .expect("self position is missing from all_positions")
+                .p;
+            let delta = (p - self_pos).normalized() * 0.1;
+            robot.go_to(&(self_pos + delta));
         } else {
             log::error!("nowhere to go");
         }
@@ -192,18 +191,17 @@ impl AI {
     }
 
     fn update_debug_image(&self) {
-        let mut img = RgbImage::from_pixel(
+        let mut img = RgbImage::new(
             MAP_WIDTH * PIXELS_PER_METER,
             MAP_HEIGHT * PIXELS_PER_METER,
-            Rgb([255, 255, 255]),
         );
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
-            match seen {
-                _ if self.is_frontier((x, y)) => img[(x as u32, y as u32)] = Rgb([0, 200, 0]),
-                SeenFree => img[(x as u32, y as u32)] = Rgb([200, 200, 200]),
-                Blocked => img[(x as u32, y as u32)] = Rgb([0, 0, 0]),
-                _ => (),
+            img[(x as u32, y as u32)] = match seen {
+                _ if self.is_frontier((x, y)) => Rgb([0, 200, 0]),
+                SeenFree => Rgb([200, 200, 200]),
+                Blocked => Rgb([0, 0, 0]),
+                Uncharted => Rgb([255, 255, 255]),
             }
         }
 

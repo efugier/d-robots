@@ -13,7 +13,7 @@ pub type MsgId = u32;
 pub enum Header {
     Private(AppId, String),
     Public(String),
-    MapUpdate(Array2<CellState>)
+    MapUpdate(Array2<CellState>),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
