@@ -93,7 +93,7 @@ impl Point {
     }
 
     pub fn angle(&self) -> Angle {
-        self.y.atan2(self.x).to_degrees()
+        self.y.atan2(self.x)
     }
 
     pub fn vec_to(&self, other: &Point) -> Point {
@@ -258,8 +258,8 @@ mod tests {
         let p1 = Point { x: 1., y: 2. };
         assert_eq!(Point::zero().angle(), 0.);
         let p2 = Point { x: 1., y: 3. };
-        assert_eq!((p2 - p1).angle(), 90.);
-        assert_eq!((p1 - p2).angle(), -90.);
+        assert_eq!((p2 - p1).angle().to_degrees(), 90.);
+        assert_eq!((p1 - p2).angle().to_degrees(), -90.);
     }
 
     #[test]

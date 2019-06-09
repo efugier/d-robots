@@ -116,11 +116,6 @@ impl AI {
     // demo app interaction
     pub fn be_smart(&mut self) -> Option<String> {
         self.mark_seen_circle(0.1);
-
-        self.all_positions
-            .get_mut(&self.app_id)
-            .expect("self position is missing from all_positions")
-            .a += 30.;
         self.update_debug_image();
         Some(String::from("Ok"))
     }
@@ -170,7 +165,7 @@ impl AI {
             .get(&self.app_id)
             .expect("self position is missing from all_positions");
         // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
-        let front = pos.p + Point { x: 0., y: 0.1 }.rotate_deg(pos.a);
+        let front = pos.p + Point { x: 0., y: 0.05 }.rotate(pos.a);
         self.detect_frontiers()
             .iter()
             .map(|p| (p, (*p - front).sq_norm()))
@@ -202,7 +197,7 @@ impl AI {
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
         let (x, y) = pos_to_pixels(pos.p);
-        let end = pos_to_pixels((Point { x: 0., y: 0.1 }).rotate_deg(pos.a) + pos.p);
+        let end = pos_to_pixels((Point { x: 0., y: 0.05 }).rotate(pos.a) + pos.p);
         draw_cross_mut(img, color, x, y);
         draw_antialiased_line_segment_mut(img, (x, y), end, color, interpolate);
     }
