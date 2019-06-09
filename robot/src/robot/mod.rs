@@ -13,7 +13,7 @@ pub enum Event {
     Collision(Point),
     Moved(Distance),
     Turned(Angle),
-    Reached(Point),
+    Reached(Position),
     Curr(Position),
     Lacc(Vec<Acceleration>),
 }
@@ -81,8 +81,8 @@ impl Robot {
             let t = duration_from_to(self.pos.p, *dest);
             (t, *dest)
         };
-        self.send_to_app_delayed(Reached(final_pos), t);
         self.pos.p = final_pos;
+        self.send_to_app_delayed(Reached(self.pos.clone()), t);
     }
 
     pub fn forward(&mut self, dist: Distance) {
