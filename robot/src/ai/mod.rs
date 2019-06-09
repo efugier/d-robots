@@ -74,17 +74,25 @@ impl AI {
     pub fn update(&mut self, robot: &mut Robot) {
         self.mark_seen_circle(0.1);
 
-        if let Some(p) = self.where_do_we_go() {
+        if let Some(target) = self.where_do_we_go() {
             let self_pos = self
                 .all_positions
                 .get(&self.app_id)
                 .expect("self position is missing from all_positions")
                 .p;
-            let delta = (p - self_pos).normalized() * 0.1;
+            let delta = (target - self_pos).normalized() * 0.05;
+            log::info!(
+                "self_pos:{:?} frontier:{:?} goto:{:?}",
+                self_pos,
+                target,
+                delta
+            );
             robot.go_to(&(self_pos + delta));
         } else {
             log::error!("nowhere to go");
         }
+
+        self.update_debug_image();
     }
 
     pub fn merge_maps(&mut self, update: Array2<CellState>) {
