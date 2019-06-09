@@ -115,7 +115,7 @@ impl App {
                             log::info!("received, from: {} : {:?}", msg.sender_id, msg.header);
                             self.send_to_network(msg.clone());
                         }
-                        if let MapUpdate(update) = msg.header{
+                        if let MapUpdate(update) = msg.header {
                             self.ai.update_map(update);
                         }
                     } else {
