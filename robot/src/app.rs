@@ -116,7 +116,7 @@ impl App {
                             self.send_to_network(msg.clone());
                         }
                         if let MapUpdate(update) = msg.content {
-                            self.ai.update_map(update);
+                            self.ai.merge_maps(update);
                         }
                     } else {
                         log::error!("could not decode {:?}", m);
