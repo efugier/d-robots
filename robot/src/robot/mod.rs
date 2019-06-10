@@ -46,7 +46,7 @@ impl Robot {
 
     pub fn load_map(&mut self, path: &PathBuf) {
         self.actual_map =
-            PolyMap::from_file(path).expect(&format!("failed to load map {:?}", path));
+            PolyMap::from_file(path).unwrap_or_else(|_| panic!("failed to load map {:?}", path));
     }
 
     pub fn init(&mut self, position: Position) {

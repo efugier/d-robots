@@ -81,7 +81,7 @@ impl App {
 
         let msg_str = msg
             .serialize()
-            .expect(&format!("Could not serialize the message {:?}", msg));
+            .unwrap_or_else(|_| panic!("Could not serialize the message {:?}", msg));
 
         if let Err(e) = self.output.write_all(format!("{}\n", msg_str).as_bytes()) {
             log::error!(
