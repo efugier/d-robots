@@ -143,7 +143,7 @@ impl App {
                     if let Ok(msg) = Msg::from_str(&m) {
                         // do something to the decoded message
                         if !self.sent_messages_ids.contains(&msg.id) {
-                            self.ai.update_robot_position(msg.id.clone(), &msg.pos);
+                            self.ai.update_robot_position(msg.sender_id, msg.pos);
                             // log::info!("received, from: {} : {:?}", msg.sender_id, msg.content);
                             self.send_to_network(msg.clone());
                         }
