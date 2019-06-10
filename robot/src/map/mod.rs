@@ -202,6 +202,7 @@ impl PolyMap {
             .map(|(pt, _)| pt)
     }
 
+    #[allow(dead_code)]
     pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<Error>> {
         //Saving message history to file
         let mut save_file = OpenOptions::new()
