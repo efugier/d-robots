@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::thread;
 
 use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut, BresenhamLineIter};
@@ -252,14 +253,17 @@ impl AI {
             self.app_id, self.debug_counter
         );
         self.debug_counter += 1;
-        img.save(temp.clone()).expect(&format!(
-            "Could not save the debug image for robot {}",
-            self.app_id
-        ));
-        std::fs::rename(temp, path).expect(&format!(
-            "Could not save the debug image for robot {}",
-            self.app_id
-        )); // for atomic writes
+        let app_id = self.app_id;
+        thread::spawn(move || {
+            img.save(temp.clone()).expect(&format!(
+                "Could not save the debug image for robot {}",
+                app_id
+            ));
+            std::fs::rename(temp, path).expect(&format!(
+                "Could not save the debug image for robot {}",
+                app_id
+            )); // for atomic writes
+        });
     }
 }
 
