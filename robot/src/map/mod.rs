@@ -163,8 +163,10 @@ impl Segment {
 
         let t = (other.0 - self.0).cross_prod(&s) / r_vec_s;
 
+        let u = - (self.0 - other.0).cross_prod(&r) / r_vec_s;
+
         // the segment does not intersect
-        if t < 0. || t > 1. {
+        if t < 0. || t > 1. || u < 0. || u > 1. {
             None
         } else {
             Some(self.0 + t * r)
