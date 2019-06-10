@@ -46,7 +46,7 @@ public slots:
 protected:
     unsigned int m_lastId = 0;
 
-    void loadMap();
+    void loadMap(const QString &filename);
 
 private:
     static constexpr inline char KEY_POLYGONS[] = "polygons";
