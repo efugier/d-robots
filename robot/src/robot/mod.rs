@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -10,7 +11,7 @@ const PI: Distance = std::f32::consts::PI;
 
 #[derive(Debug)]
 pub enum Event {
-    Collision(Point),
+    Collision(Position),
     Moved(Distance),
     Turned(Angle),
     Reached(Position),

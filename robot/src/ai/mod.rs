@@ -119,8 +119,17 @@ impl AI {
         Some(String::from("Ok"))
     }
 
-    pub fn update_robot_position(&mut self, id: AppId, pos: Position) {
-        self.all_positions.insert(id, pos);
+    pub fn update_robot_position(&mut self, id: AppId, pos: &Position) {
+        self.all_positions.insert(id, pos.clone());
+    }
+
+    pub fn notify_collision(&mut self, robot: &mut Robot, point: Point) {
+        let (x, y) = pos_to_pixels(point);
+        self.map_seen[(x as usize, y as usize)] = Blocked;
+        // self.mark_seen_circle(0.1);
+
+        robot.forward(-0.1);
+        self.update_debug_image();
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
