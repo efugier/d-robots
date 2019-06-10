@@ -26,7 +26,7 @@ MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent
 
 void MainWindow::loadMap()
 {
-    QFile file("map_example.json");
+    QFile file("map/map.json");
     file.open(QIODevice::ReadOnly);
 
     QJsonDocument jsonDoc = QJsonDocument::fromJson(file.readAll());
@@ -74,6 +74,7 @@ void MainWindow::loadMap()
         auto points = polygon[KEY_POINTS].toArray();
 
         QPoint firstPoint;
+        bool firstPointDefined = false;
         QPoint lastPoint;
 
         for (auto rawPoint : points)
@@ -93,8 +94,11 @@ void MainWindow::loadMap()
                 return;
             }
             QPoint currentPoint = QPoint{point[KEY_X].toInt() * 10, point[KEY_Y].toInt() * 10};
-            if (firstPoint == QPoint{})
+            if (!firstPointDefined)
+            {
+                firstPointDefined = true;
                 firstPoint = currentPoint;
+            }
             else
                 scene->addLine(QLine(lastPoint, currentPoint), pen);
 
