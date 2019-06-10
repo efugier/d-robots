@@ -7,6 +7,7 @@ use std::sync::mpsc;
 use log;
 
 use crate::ai::AI;
+use crate::map::{Point, Position};
 use crate::messages::{Msg, MsgContent::*, MsgId};
 use crate::robot::{self, Robot};
 
@@ -64,6 +65,15 @@ impl App {
             sent_messages_ids: HashSet::new(),
             counter: 0,
         }
+    }
+
+    pub fn init(&mut self, (x, y): (f32, f32)) {
+        let pos = Position {
+            p: Point { x, y },
+            a: 0.,
+        };
+        self.robot.init(pos);
+        self.ai.update_robot_position(self.id, pos);
     }
 
     fn send_to_network(&mut self, msg: Msg) {
