@@ -89,7 +89,7 @@ impl App {
                 e
             );
         } else {
-            log::info!("sent, messsage: {:?}", msg.content);
+            log::info!("sent, message: {:?}", msg.id);
         }
     }
 
@@ -144,7 +144,7 @@ impl App {
                         // do something to the decoded message
                         if !self.sent_messages_ids.contains(&msg.id) {
                             self.ai.update_robot_position(msg.id.clone(), &msg.pos);
-                            log::info!("received, from: {} : {:?}", msg.sender_id, msg.content);
+                            // log::info!("received, from: {} : {:?}", msg.sender_id, msg.content);
                             self.send_to_network(msg.clone());
                         }
                         if let MapUpdate(update) = msg.content {
