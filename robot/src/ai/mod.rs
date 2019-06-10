@@ -14,6 +14,8 @@ use crate::app::AppId;
 use crate::map::{Point, Position};
 use crate::robot::Robot;
 
+mod pathfinder;
+
 const MAP_WIDTH: u32 = 2;
 const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
 const CENTER_X: f32 = 1.; // position of the 0
@@ -46,6 +48,9 @@ pub struct AI {
     all_positions: HashMap<AppId, Position>,
     collisions: Vec<Point>,
     pub map_seen: Array2<CellState>,
+    // Next pixel coordinates to go to
+    // stored in reverse : last item of Vec is the next point
+    next_moves: Vec<(u32,u32)>,
 }
 
 /// position in meters
@@ -70,6 +75,7 @@ impl AI {
             collisions: Vec::new(),
             // the map is uncharted at the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
+            next_moves: Vec::new(),
         };
         ai.all_positions.insert(ai.app_id, Position::default());
         ai
@@ -78,12 +84,15 @@ impl AI {
     pub fn update(&mut self, robot: &mut Robot) {
         self.mark_seen_circle(0.1);
 
-        if let Some(target) = self.where_do_we_go() {
+        if let Some(destination) = self.next_moves.last(){
+            robot.go_to(&pixels_to_pos(*destination));
+            self.next_moves.pop();
+        }
+        else if let Some(target) = self.where_do_we_go() {
             let self_pos = self
-                .all_positions
-                .get(&self.app_id)
-                .expect("self position is missing from all_positions")
-                .p;
+                            .all_positions
+                            .get(&self.app_id)
+                            .expect("self position is missing from all_positions").p;
             let delta = (target - self_pos).normalized() * 0.05;
             log::info!(
                 "self_pos:{:?} frontier:{:?} goto:{:?}",
@@ -91,7 +100,16 @@ impl AI {
                 target,
                 delta
             );
-            robot.go_to(self_pos + delta);
+            self.next_moves = pathfinder::find_path(pos_to_pixels(self_pos), self.map_seen.clone(), pos_to_pixels(self_pos+delta));
+            if self.next_moves.is_empty(){
+                log::error!("pathfinder returned empty path");
+            }
+            if let Some(destination) = self.next_moves.pop(){
+                robot.go_to(&pixels_to_pos(destination));
+            }
+            else{
+                log::error!("nowhere to go - pathfinding failed");
+            }
         } else {
             log::error!("nowhere to go");
         }
