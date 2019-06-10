@@ -43,6 +43,11 @@ impl Robot {
         )
     }
 
+    pub fn load_map(&mut self, path: &PathBuf) {
+        self.actual_map =
+            PolyMap::from_file(path).expect(&format!("failed to load map {:?}", path));
+    }
+
     pub fn init(x: Distance, y: Distance, a: Angle) -> (Self, mpsc::Receiver<Event>) {
         let (app_tx, rx) = mpsc::channel();
         (
@@ -75,18 +80,18 @@ impl Robot {
 
     pub fn go_to(&mut self, dest: &Point) {
         let trajectory = Segment(self.pos.p, *dest);
-        let (t, final_pos) = if let Some(stop) = self.actual_map.first_intersection(&trajectory) {
-            let t = duration_from_to(self.pos.p, stop);
-            (t, stop)
-        } else {
-            let t = duration_from_to(self.pos.p, *dest);
-            (t, *dest)
-        };
+        let a = (*dest - self.pos.p).rotate_deg(-90.0).angle();
+        let final_pos = self.actual_map.first_intersection(&trajectory);
+        let delay = duration_from_to(self.pos.p, final_pos.unwrap_or(*dest));
         self.pos = Position {
-            p: final_pos,
-            a: (*dest - self.pos.p).rotate_deg(-90.0).angle(),
+            p: final_pos.unwrap_or(*dest) - Point { x: 0., y: 0.005 }.rotate(a),
+            a,
         };
-        self.send_to_app_delayed(Reached(self.pos.clone()), t);
+        if final_pos.is_some() {
+            self.send_to_app_delayed(Collision(self.pos.clone()), delay)
+        } else {
+            self.send_to_app_delayed(Reached(self.pos.clone()), delay);
+        }
     }
 
     pub fn forward(&mut self, dist: Distance) {
