@@ -44,7 +44,7 @@ pub struct AI {
     debug_counter: u32,
     all_positions: HashMap<AppId, Position>,
     collisions: Vec<Point>,
-    map_seen: Array2<CellState>,
+    pub map_seen: Array2<CellState>,
 }
 
 /// position in meters
