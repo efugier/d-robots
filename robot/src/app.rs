@@ -77,7 +77,7 @@ impl App {
     }
 
     fn send_to_network(&mut self, msg: Msg) {
-        self.sent_messages_ids.insert(msg.id.clone());
+        self.sent_messages_ids.insert(msg.id);
 
         let msg_str = msg
             .serialize()
@@ -97,7 +97,7 @@ impl App {
         self.robot.start();
         let greeting_message = Msg::new(
             self.id,
-            self.robot.pos.clone(),
+            self.robot.pos,
             Public(format!("Hello there, I am {}!", self.id)),
         );
         self.send_to_network(greeting_message);
@@ -112,11 +112,11 @@ impl App {
 
                     match msg {
                         robot::Event::Reached(p) => {
-                            self.ai.update_robot_position(self.id, &p);
-                            self.ai.update(&mut self.robot)
+                            self.ai.update_robot_position(self.id, p);
+                            self.ai.update(&mut self.robot);
                         }
                         robot::Event::Collision(p) => {
-                            self.ai.update_robot_position(self.id, &p);
+                            self.ai.update_robot_position(self.id, p);
                             self.ai.notify_collision(&mut self.robot, p.p);
                         }
                         _ => break,
@@ -127,7 +127,7 @@ impl App {
                         self.counter = 0;
                         self.send_to_network(Msg::new(
                             self.id,
-                            self.robot.pos.clone(),
+                            self.robot.pos,
                             MapUpdate(self.ai.map_seen.clone()),
                         ));
                     }

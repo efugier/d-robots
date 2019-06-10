@@ -90,7 +90,7 @@ impl AI {
                 target,
                 delta
             );
-            robot.go_to(&(self_pos + delta));
+            robot.go_to(self_pos + delta);
         } else {
             log::error!("nowhere to go");
         }
@@ -119,8 +119,8 @@ impl AI {
         Some(String::from("Ok"))
     }
 
-    pub fn update_robot_position(&mut self, id: AppId, pos: &Position) {
-        self.all_positions.insert(id, pos.clone());
+    pub fn update_robot_position(&mut self, id: AppId, pos: Position) {
+        self.all_positions.insert(id, pos);
     }
 
     pub fn notify_collision(&mut self, robot: &mut Robot, point: Point) {

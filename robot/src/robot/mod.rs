@@ -68,25 +68,25 @@ impl Robot {
         });
     }
 
-    pub fn go_to(&mut self, dest: &Point) {
-        let trajectory = Segment(self.pos.p, *dest);
-        let a = (*dest - self.pos.p).rotate_deg(-90.0).angle();
+    pub fn go_to(&mut self, dest: Point) {
+        let trajectory = Segment(self.pos.p, dest);
+        let a = (dest - self.pos.p).rotate_deg(-90.0).angle();
         let final_pos = self.actual_map.first_intersection(&trajectory);
-        let delay = duration_from_to(self.pos.p, final_pos.unwrap_or(*dest));
+        let delay = duration_from_to(self.pos.p, final_pos.unwrap_or(dest));
         self.pos = Position {
-            p: final_pos.unwrap_or(*dest) - Point { x: 0., y: 0.005 }.rotate(a),
+            p: final_pos.unwrap_or(dest) - Point { x: 0., y: 0.005 }.rotate(a),
             a,
         };
         if final_pos.is_some() {
-            self.send_to_app_delayed(Collision(self.pos.clone()), delay)
+            self.send_to_app_delayed(Collision(self.pos), delay)
         } else {
-            self.send_to_app_delayed(Reached(self.pos.clone()), delay);
+            self.send_to_app_delayed(Reached(self.pos), delay);
         }
     }
 
     pub fn forward(&mut self, dist: Distance) {
         let dest = self.pos.p + Point { x: 0., y: dist }.rotate(self.pos.a);
-        self.go_to(&dest);
+        self.go_to(dest);
     }
 
     #[allow(dead_code)]
@@ -116,6 +116,6 @@ impl Robot {
 }
 
 pub fn duration_from_to(p1: Point, p2: Point) -> Duration {
-    let t = p1.sq_dist(&p2).sqrt() / ROBOT_SPEED;
+    let t = p1.sq_dist(p2).sqrt() / ROBOT_SPEED;
     Duration::from_millis((1000. * t) as u64)
 }
