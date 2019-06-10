@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use image::{Rgb, RgbImage};
-use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut};
+use imageproc::drawing::{draw_antialiased_line_segment_mut, draw_cross_mut, BresenhamLineIter};
 use imageproc::pixelops::interpolate;
 use itertools::iproduct;
 use log;
@@ -20,6 +20,7 @@ const CENTER_Y: f32 = 1.5;
 const PIXELS_PER_METER: u32 = 100; // arbitrary precision of 1 cm
 const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
 const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
+const COLLISION_MERGE_DISTANCE: f32 = 0.1;
 
 #[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum CellState {
@@ -124,12 +125,28 @@ impl AI {
     }
 
     pub fn notify_collision(&mut self, robot: &mut Robot, point: Point) {
+        self.register_collision(point);
         let (x, y) = pos_to_pixels(point);
         self.map_seen[(x as usize, y as usize)] = Blocked;
         // self.mark_seen_circle(0.1);
 
         robot.forward(-0.1);
         self.update_debug_image();
+    }
+
+    fn register_collision(&mut self, new: Point) {
+        let start = pos_to_pixels(new);
+        let s_f32 = (start.0 as f32, start.1 as f32);
+        for &p in self.collisions.iter() {
+            if (p - new).sq_norm() <= COLLISION_MERGE_DISTANCE * COLLISION_MERGE_DISTANCE {
+                let end = pos_to_pixels(p);
+                let e_f32 = (end.0 as f32, end.1 as f32);
+                for x in BresenhamLineIter::new(s_f32, e_f32) {
+                    self.map_seen[(x.0 as usize, x.1 as usize)] = Blocked;
+                }
+            }
+        }
+        self.collisions.push(new);
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
