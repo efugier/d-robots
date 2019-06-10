@@ -49,19 +49,8 @@ impl Robot {
             PolyMap::from_file(path).expect(&format!("failed to load map {:?}", path));
     }
 
-    pub fn init(x: Distance, y: Distance, a: Angle) -> (Self, mpsc::Receiver<Event>) {
-        let (app_tx, rx) = mpsc::channel();
-        (
-            Robot {
-                app_tx,
-                pos: Position {
-                    p: Point { x, y },
-                    a,
-                },
-                actual_map: PolyMap { polygons: vec![] },
-            },
-            rx,
-        )
+    pub fn init(&mut self, position: Position) {
+        self.pos = position;
     }
 
     fn send_to_app(&self, event: Event) {

@@ -32,6 +32,12 @@ pub struct Opt {
     //Application Identifier
     #[structopt(short = "l", long = "logfile")]
     logfile: Option<PathBuf>,
+
+    #[structopt(short = "x", default_value = "0")]
+    init_x: f32,
+
+    #[structopt(short = "y", default_value = "0")]
+    init_y: f32,
 }
 
 fn main() {
@@ -58,6 +64,7 @@ fn main() {
         opt.output,
         opt.input,
     );
+    app.init((opt.init_x, opt.init_y));
 
     if let Err(e) = app.run() {
         log::error!("Something went wrong {}", e);
