@@ -253,14 +253,10 @@ impl AI {
         self.debug_counter += 1;
         let app_id = self.app_id;
         thread::spawn(move || {
-            img.save(temp.clone()).expect(&format!(
-                "Could not save the debug image for robot {}",
-                app_id
-            ));
-            std::fs::rename(temp, path).expect(&format!(
-                "Could not save the debug image for robot {}",
-                app_id
-            )); // for atomic writes
+            img.save(temp.clone())
+                .unwrap_or_else(|_| panic!("Could not save the debug image for robot {}", app_id));
+            std::fs::rename(temp, path)
+                .unwrap_or_else(|_| panic!("Could not save the debug image for robot {}", app_id)); // for atomic writes
         });
     }
 }
