@@ -39,6 +39,7 @@ pub struct App {
     events: Events,
     // Stores the sent messages ids to not rebroadcast them again
     sent_messages_ids: HashSet<MsgId>,
+    counter: u32,
 }
 
 impl App {
@@ -61,6 +62,7 @@ impl App {
             self_tx,
             events,
             sent_messages_ids: HashSet::new(),
+            counter: 0,
         }
     }
 
@@ -109,10 +111,20 @@ impl App {
                         }
                         _ => break,
                     }
+
+                    self.counter += 1;
+                    if self.counter > 10 {
+                        self.counter = 0;
+                        self.send_to_network(Msg::new(
+                            self.id,
+                            self.robot.pos.clone(),
+                            MapUpdate(self.ai.map_seen.clone()),
+                        ));
+                    }
                 }
 
                 DistantInput(m) => {
-                    log::trace!("message {:?}", m);
+                    // log::trace!("message {:?}", m);
                     // AI interaction demo
                     if let Some(msg) = self.ai.be_smart() {
                         println!("{}", msg);
