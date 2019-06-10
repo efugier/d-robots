@@ -60,7 +60,7 @@ fn main() {
     }
 
     let mut app = App::new(
-        opt.app_id.unwrap_or_else(|| rand::random()),
+        opt.app_id.unwrap_or_else(rand::random),
         opt.output,
         opt.input,
     );
