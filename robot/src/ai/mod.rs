@@ -46,16 +46,15 @@ pub struct AI {
 }
 
 /// position in meters
-fn pos_to_pixels(point: Point) -> (i32, i32) {
-    let Point { x, y } = point;
-    let x = ((x + CENTER_X) * PIXELS_PER_METER as f32).round() as i32;
-    let y = ((-y + CENTER_Y) * PIXELS_PER_METER as f32).round() as i32;
+fn pos_to_pixels(point: Point) -> (u32, u32) {
+    let x = ((point.x + CENTER_X) * PIXELS_PER_METER as f32).round() as u32;
+    let y = ((-point.y + CENTER_Y) * PIXELS_PER_METER as f32).round() as u32;
     (x, y)
 }
 
-fn pixels_to_pos(p: (i32, i32)) -> Point {
+fn pixels_to_pos(p: (u32, u32)) -> Point {
     let x = p.0 as f32 / PIXELS_PER_METER as f32 - CENTER_X;
-    let y = -p.1 as f32 / PIXELS_PER_METER as f32 + CENTER_Y;
+    let y = -(p.1 as f32 / PIXELS_PER_METER as f32) + CENTER_Y;
     Point { x, y }
 }
 
@@ -133,23 +132,12 @@ impl AI {
             .p;
         let (rx, ry) = pos_to_pixels(robot);
         log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
-        let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as i32;
-        for y in -radius_p..=radius_p {
-            let iy = ry + y;
-            if iy < 0 || iy >= self.map_seen.cols() as i32 {
-                continue;
-            }
-
-            for x in -radius_p..=radius_p {
-                let ix = rx + x;
-                if ix < 0 || ix >= self.map_seen.rows() as i32 {
-                    continue;
-                }
-
-                let dist = (pixels_to_pos((ix, iy)) - robot).sq_norm();
-                // log::info!("pixel to pos {:?} {:?}", (ix, iy), pixels_to_pos((ix, iy)));
-                // eprintln!("i'm at ix:{} iy:{} dist is {}", ix, iy, dist);
-                let ixy = (ix as usize, iy as usize);
+        let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as u32;
+        for y in ry.saturating_sub(radius_p)..(ry + radius_p + 1).min(MAP_PHEIGHT as u32) {
+            for x in rx.saturating_sub(radius_p)..(rx + radius_p + 1).min(MAP_PWIDTH as u32) {
+                let xy = (x, y);
+                let dist = (pixels_to_pos(xy) - robot).sq_norm();
+                let ixy = (x as usize, y as usize);
                 if dist <= radius * radius && self.map_seen[ixy] == Uncharted {
                     self.map_seen[ixy] = SeenFree;
                 }
@@ -181,7 +169,7 @@ impl AI {
         self.map_seen
             .indexed_iter()
             .filter(|(xy, _)| self.is_frontier(*xy))
-            .map(|((x, y), _)| pixels_to_pos((x as i32, y as i32)))
+            .map(|((x, y), _)| pixels_to_pos((x as u32, y as u32)))
             .collect()
     }
 
@@ -198,8 +186,14 @@ impl AI {
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
         let (x, y) = pos_to_pixels(pos.p);
         let end = pos_to_pixels((Point { x: 0., y: 0.05 }).rotate(pos.a) + pos.p);
-        draw_cross_mut(img, color, x, y);
-        draw_antialiased_line_segment_mut(img, (x, y), end, color, interpolate);
+        draw_cross_mut(img, color, x as i32, y as i32);
+        draw_antialiased_line_segment_mut(
+            img,
+            (x as i32, y as i32),
+            (end.0 as i32, end.1 as i32),
+            color,
+            interpolate,
+        );
     }
 
     fn update_debug_image(&mut self) {
@@ -249,7 +243,7 @@ mod tests {
 
     #[test]
     fn pixels_pos_test() {
-        let pix = (MAP_PWIDTH as i32 / 2, MAP_PHEIGHT as i32 / 2);
+        let pix = (MAP_PWIDTH as u32 / 2, MAP_PHEIGHT as u32 / 2);
         assert_eq!(pixels_to_pos(pix), Point::zero());
         assert_eq!(pos_to_pixels(Point::zero()), pix);
 
