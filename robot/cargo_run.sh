@@ -1,3 +1,3 @@
 #!/bin/sh
 
-RUST_LOG=robot=trace cargo run --color=always $@ -- -i fifo -o fifo
+RUST_LOG=robot=trace cargo run --color=always $@ -- -i fifo -o fifo -n 1
