@@ -10,6 +10,7 @@ const ROBOT_SPEED: Distance = 1.;
 const PI: Distance = std::f32::consts::PI;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Event {
     Collision(Position),
     Moved(Distance),
@@ -99,11 +100,13 @@ impl Robot {
         self.go_to(&dest);
     }
 
+    #[allow(dead_code)]
     pub fn turn(&mut self, angle: Angle) {
         self.pos.a = (self.pos.a + angle) % (2. * PI);
     }
 
     /// return the last 10 acceleration norms
+    #[allow(dead_code, unused_variables)]
     pub fn lacc(angle: Angle) {
         unimplemented!()
     }
@@ -111,6 +114,7 @@ impl Robot {
     /// tune the collision parameters
     /// `nb_acc_for_mean` the number of acceleration norms used to compute a mean
     /// `nb_consec_mean` number of consecutive means to be smaller than `mean_threshold`
+    #[allow(dead_code, unused_variables)]
     pub fn tune(nb_acc_for_mean: usize, nb_consec_mean: usize, mean_threshold: f32) {
         unimplemented!()
     }
