@@ -105,11 +105,9 @@ impl AI {
         ) {
             let old = self.map_seen.get_mut(coords).unwrap();
             match (*old, update[coords]) {
-                (SeenFree, Blocked) | (Blocked, SeenFree) => {
-                    log::error!("Received contradicting information")
-                }
-                (a, b) if b == Uncharted || a == b => (),
-                (_, new) => *old = new,
+                (_, Blocked) => *old = Blocked,
+                (Uncharted, SeenFree) => *old = SeenFree,
+                _ => (),
             }
         }
     }
