@@ -1,0 +1,23 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Robot viewer</title>
+    <style>
+        img {
+            outline: 1px solid black;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+    <img src="robot_1.png" alt="">
+    <script>
+        const images = Array.from(document.getElementsByTagName('img'))
+        setInterval(() => {
+            images.forEach(image => image.src = image.src.split('#')[0] + '#' + +new Date())
+        }, 100);
+    </script>
+</body>
+</html>
