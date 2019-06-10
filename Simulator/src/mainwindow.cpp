@@ -6,6 +6,9 @@
 #include <QJsonArray>
 #include <QKeyEvent>
 #include <QColor>
+#include <QFileDialog>
+#include <QApplication>
+
 
 MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent) :
     QMainWindow(parent), m_robotList(robotList)
@@ -21,12 +24,14 @@ MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent
     std::cerr << "MainWindow created" << std::endl;
     if(robotPm->isNull()) std::cerr << "Error creating pixmap" << std::endl;
 
-    loadMap();
+    QString fileName = QFileDialog::getOpenFileName(this,
+        "Ouvrir la carte", QApplication::applicationDirPath(), "Fichier JSON (*.json)");
+    loadMap(fileName);
 }
 
-void MainWindow::loadMap()
+void MainWindow::loadMap(const QString& filename)
 {
-    QFile file("map/map.json");
+    QFile file(filename);
     file.open(QIODevice::ReadOnly);
 
     QJsonDocument jsonDoc = QJsonDocument::fromJson(file.readAll());
@@ -93,7 +98,7 @@ void MainWindow::loadMap()
                 std::cerr << rawPoint.toString().toStdString() << std::endl;
                 return;
             }
-            QPoint currentPoint = QPoint{point[KEY_X].toInt() * 10, point[KEY_Y].toInt() * 10};
+            QPoint currentPoint = QPoint{static_cast<int>(point[KEY_X].toDouble() * 100), static_cast<int>(point[KEY_Y].toDouble() * 100)};
             if (!firstPointDefined)
             {
                 firstPointDefined = true;
