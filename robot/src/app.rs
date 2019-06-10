@@ -44,7 +44,8 @@ pub struct App {
 impl App {
     pub fn new(id: AppId, output: PathBuf, input: PathBuf) -> Self {
         let (self_tx, self_rx) = mpsc::channel();
-        let (robot, robot_rx) = Robot::new();
+        let (mut robot, robot_rx) = Robot::new();
+        robot.load_map(&"map.json".into());
         let events = Events::new(input, robot_rx, self_rx);
         let output = OpenOptions::new()
             .write(true)
@@ -99,8 +100,12 @@ impl App {
 
                     match msg {
                         robot::Event::Reached(p) => {
-                            self.ai.update_robot_position(self.id, p);
+                            self.ai.update_robot_position(self.id, &p);
                             self.ai.update(&mut self.robot)
+                        }
+                        robot::Event::Collision(p) => {
+                            self.ai.update_robot_position(self.id, &p);
+                            self.ai.notify_collision(&mut self.robot, p.p);
                         }
                         _ => break,
                     }
@@ -116,8 +121,7 @@ impl App {
                     if let Ok(msg) = Msg::from_str(&m) {
                         // do something to the decoded message
                         if !self.sent_messages_ids.contains(&msg.id) {
-                            self.ai
-                                .update_robot_position(msg.id.clone(), msg.pos.clone());
+                            self.ai.update_robot_position(msg.id.clone(), &msg.pos);
                             log::info!("received, from: {} : {:?}", msg.sender_id, msg.content);
                             self.send_to_network(msg.clone());
                         }
