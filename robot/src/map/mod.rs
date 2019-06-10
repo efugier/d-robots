@@ -92,26 +92,26 @@ impl Point {
         Point { x: 0., y: 0. }
     }
 
-    pub fn angle(&self) -> Angle {
+    pub fn angle(self) -> Angle {
         self.y.atan2(self.x)
     }
 
-    pub fn vec_to(&self, other: &Point) -> Point {
+    pub fn vec_to(self, other: Point) -> Point {
         Point {
             x: other.x - self.x,
             y: other.y - self.y,
         }
     }
 
-    pub fn dot_prod(&self, other: &Point) -> Distance {
+    pub fn dot_prod(self, other: Point) -> Distance {
         self.x * other.x + self.y * other.y
     }
 
-    pub fn cross_prod(&self, other: &Point) -> Distance {
+    pub fn cross_prod(self, other: Point) -> Distance {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn rotate(&self, angle: Angle) -> Point {
+    pub fn rotate(self, angle: Angle) -> Point {
         let (sin, cos) = angle.sin_cos();
         Point {
             x: self.x * cos - self.y * sin,
@@ -119,24 +119,24 @@ impl Point {
         }
     }
 
-    pub fn rotate_deg(&self, angle: Angle) -> Point {
+    pub fn rotate_deg(self, angle: Angle) -> Point {
         self.rotate(angle.to_radians())
     }
 
-    pub fn sq_norm(&self) -> Distance {
+    pub fn sq_norm(self) -> Distance {
         self.dot_prod(self)
     }
 
-    pub fn norm(&self) -> Distance {
+    pub fn norm(self) -> Distance {
         self.sq_norm().sqrt()
     }
 
-    pub fn normalized(&self) -> Self {
-        *self / self.norm()
+    pub fn normalized(self) -> Self {
+        self / self.norm()
     }
 
-    pub fn sq_dist(&self, other: &Self) -> Distance {
-        (*self - *other).sq_norm()
+    pub fn sq_dist(self, other: Self) -> Distance {
+        (self - other).sq_norm()
     }
 }
 
@@ -151,19 +151,19 @@ impl Segment {
     pub fn intersection(&self, other: &Segment) -> Option<Point> {
         // p = self.0
         // q = other.0
-        let r = self.0.vec_to(&self.1);
-        let s = other.0.vec_to(&other.1);
+        let r = self.0.vec_to(self.1);
+        let s = other.0.vec_to(other.1);
 
-        let r_vec_s = r.cross_prod(&s);
+        let r_vec_s = r.cross_prod(s);
 
         // the segments are parallel
         if r_vec_s.abs() < EPSILON {
             return None;
         }
 
-        let t = (other.0 - self.0).cross_prod(&s) / r_vec_s;
+        let t = (other.0 - self.0).cross_prod(s) / r_vec_s;
 
-        let u = -(self.0 - other.0).cross_prod(&r) / r_vec_s;
+        let u = -(self.0 - other.0).cross_prod(r) / r_vec_s;
 
         // the segment does not intersect
         if t < 0. || t > 1. || u < 0. || u > 1. {
@@ -174,7 +174,7 @@ impl Segment {
     }
 }
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Default, Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Position {
     pub p: Point,
     pub a: Angle,
@@ -197,7 +197,7 @@ impl PolyMap {
     pub fn first_intersection(&self, s: &Segment) -> Option<(Point)> {
         self.segments()
             .filter_map(|seg| s.intersection(&seg))
-            .map(|p| (p, s.0.sq_dist(&p)))
+            .map(|p| (p, s.0.sq_dist(p)))
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap_or(Ordering::Equal))
             .map(|(pt, _)| pt)
     }
