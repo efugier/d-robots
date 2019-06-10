@@ -156,7 +156,7 @@ impl AI {
             .expect("self position is missing from all_positions")
             .p;
         let (rx, ry) = pos_to_pixels(robot);
-        log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
+        // log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as u32;
         for y in ry.saturating_sub(radius_p)..(ry + radius_p + 1).min(MAP_PHEIGHT as u32) {
             for x in rx.saturating_sub(radius_p)..(rx + radius_p + 1).min(MAP_PWIDTH as u32) {
