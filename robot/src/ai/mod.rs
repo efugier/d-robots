@@ -215,6 +215,10 @@ impl AI {
     }
 
     fn update_debug_image(&mut self) {
+        self.debug_counter += 1;
+        if self.debug_counter % 2 != 0 {
+            return;
+        }
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
@@ -243,7 +247,6 @@ impl AI {
             "output/robot_{}-{}_tmp.png",
             self.app_id, self.debug_counter
         );
-        self.debug_counter += 1;
         let app_id = self.app_id;
         thread::spawn(move || {
             img.save(temp.clone())
