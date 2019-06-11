@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "Router.hpp"
+
 // To use mkfifo and open/write/close
 #include <fcntl.h>
 #include <sys/types.h>
@@ -14,17 +16,23 @@
 
 Robot::Robot(const std::string &fifoName, unsigned int id) : m_id(id)
 {
-    const char* fifo = fifoName.c_str();
+    const char* fifo = (fifoName + "_in").c_str();
     //m_thread = std::thread(&Robot::instanciate, this, fifoName);
 
     m_threadArgs.obj = this;
-    m_threadArgs.fifoName = fifoName;
+    m_threadArgs.inFifoName = (fifoName + "_in");
+    m_threadArgs.outFifoName = "simulIn";//(fifoName + "_out");
 
     std::cerr << "[ Robot " << id << " ] " << "Opening fifo" << std::endl;
     mkfifo(fifo, 0666);
+
+    //if (Router::get())
+    //    Router::get()->newListener((fifoName + "_out"));
+
     pthread_create(&m_thread, nullptr, &Robot::instanciate, (void*)&m_threadArgs);
 
     m_fifoFd = open(fifo, O_WRONLY);
+
 
     if (m_fifoFd < 0)
         std::cerr << "[ Robot " << id << " ] " << "Fifo error : " <<  strerror(m_fifoFd) << std::endl;
@@ -63,7 +71,7 @@ void* Robot::instanciate(void *arguments)
     params.sched_priority = -1;
     pthread_setschedparam(args->obj->m_thread, SCHED_FIFO, &params);
     std::stringstream command;
-    command << RUST_PARAMS << " " << ROBOT_APP << " -i " << args->fifoName.c_str() << " -o " << args->obj->m_simulFifo.c_str() << " --name " << args->obj->m_id;
+    command << RUST_PARAMS << " " << ROBOT_APP << " -i " << args->inFifoName.c_str() << " -o " << args->outFifoName.c_str() << " --name " << args->obj->m_id;
     std::cerr << "Execute command " << command.str() << std::endl;
     system(command.str().c_str());
 
@@ -72,5 +80,5 @@ void* Robot::instanciate(void *arguments)
 
 void Robot::setSimulationOutFifo(const std::string &simulFifo)
 {
-    m_simulFifo = simulFifo;
+    //m_simulFifo = simulFifo;
 }
