@@ -233,8 +233,8 @@ impl AI {
             }
         }
 
-        for (i, pos) in self.all_positions.values().enumerate() {
-            let color = if i == 0 {
+        for (&id, pos) in self.all_positions.iter() {
+            let color = if id == self.app_id {
                 Rgb([255, 0, 0])
             } else {
                 Rgb([0, 0, 255])
