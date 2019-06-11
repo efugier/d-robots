@@ -8,8 +8,7 @@ use std::usize;
 #[derive(Clone, PartialEq, Debug)]
 struct Node {
     cost: f32,
-    x: u32,
-    y: u32,
+    xy: (usize, usize),
     parent: Option<Box<Node>>,
 }
 
@@ -27,7 +26,7 @@ impl Ord for Node {
             .cost
             .partial_cmp(&self.cost)
             .unwrap()
-            .then_with(|| self.x.cmp(&other.x))
+            .then_with(|| self.xy.cmp(&other.xy))
     }
 }
 
@@ -45,11 +44,13 @@ impl PartialOrd for Node {
 // nodes in the queue. It also uses `usize::MAX` as a sentinel value,
 // for a simpler implementation.
 pub fn find_path(
-    self_pos: (u32, u32),
+    start: (u32, u32),
     map_seen: &Array2<CellState>,
     dest: (u32, u32),
 ) -> Vec<(u32, u32)> {
-    if dest.0 >= map_seen.shape()[0] as u32 || dest.1 >= map_seen.shape()[1] as u32 {
+    let start = (start.0 as usize, start.1 as usize);
+    let dest = (dest.0 as usize, dest.1 as usize);
+    if dest.0 >= map_seen.shape()[0] || dest.1 >= map_seen.shape()[1] {
         log::error!("[Pathfinding] destination point {:?} is out of map", dest);
     }
     let moves = vec![
@@ -70,28 +71,21 @@ pub fn find_path(
     let mut heap = BinaryHeap::new();
 
     // We're at `start`, with a zero cost
-    dist[(self_pos.0 as usize, self_pos.1 as usize)] = 0;
+    dist[start] = 0;
     heap.push(Node {
         cost: 0.,
-        x: self_pos.0,
-        y: self_pos.1,
+        xy: start,
         parent: None,
     });
 
     // Examine the frontier with lower cost nodes first (min-heap)
-    while let Some(Node {
-        cost,
-        x: curr_x,
-        y: curr_y,
-        parent,
-    }) = heap.pop()
-    {
+    while let Some(Node { cost, xy, parent }) = heap.pop() {
         // Destination reached
-        if (curr_x, curr_y) == dest {
-            path.push((curr_x as u32, curr_y as u32));
+        if xy == dest {
+            path.push((xy.0 as u32, xy.1 as u32));
             let mut prev = parent;
             while let Some(curr) = prev {
-                path.push((curr.x as u32, curr.y as u32));
+                path.push((curr.xy.0 as u32, curr.xy.1 as u32));
                 prev = curr.parent;
             }
             return path;
@@ -109,39 +103,35 @@ pub fn find_path(
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
         for mv in &moves {
-            let new_x = curr_x as i32 + mv.0;
-            let new_y = curr_y as i32 + mv.1;
-            let new_cost = dist[(curr_x as usize, curr_y as usize)] as f32
-                + 1.
-                + ((new_x as f32 - dest.0 as f32).powf(2.)
-                    + (new_y as f32 - dest.1 as f32).powf(2.))
-                .sqrt();
-            if new_x < map_seen.shape()[0] as i32
-                && new_y < map_seen.shape()[1] as i32
-                && new_x >= 0
-                && new_y >= 0
-                && map_seen[(new_x as usize, new_y as usize)] != CellState::Blocked
+            let new = (xy.0 as i32 + mv.0, xy.1 as i32 + mv.1);
+            if new.0 < map_seen.shape()[0] as i32
+                && new.1 < map_seen.shape()[1] as i32
+                && new.0 >= 0
+                && new.1 >= 0
+                && map_seen[(new.0 as usize, new.1 as usize)] != CellState::Blocked
             {
+                let new_cost = dist[xy] as f32
+                    + 1.
+                    + ((new.0 as f32 - dest.0 as f32).powf(2.)
+                        + (new.1 as f32 - dest.1 as f32).powf(2.))
+                    .sqrt();
+
+                let new = (new.0 as usize, new.1 as usize);
                 let next = Node {
                     cost: new_cost,
-                    x: new_x as u32,
-                    y: new_y as u32,
+                    xy: new,
                     parent: Some(Box::new(Node {
                         cost,
-                        x: curr_x,
-                        y: curr_y,
+                        xy,
                         parent: parent.clone(),
                     })),
                 };
 
                 // If so, add it to the frontier and continue
-                if dist[(curr_x as usize, curr_y as usize)] + 1
-                    < dist[(new_x as usize, new_y as usize)]
-                {
+                if dist[xy] + 1 < dist[new] {
                     heap.push(next);
                     // Update, we have now found a better way
-                    dist[(new_x as usize, new_y as usize)] =
-                        dist[(curr_x as usize, curr_y as usize)] + 1;
+                    dist[new] = dist[xy] + 1;
                 }
             }
         }
@@ -151,7 +141,7 @@ pub fn find_path(
     log::error!(
         "[Pathfinding] destination point {:?} is unreachable from {:?}",
         dest,
-        self_pos
+        start
     );
     path
 }
