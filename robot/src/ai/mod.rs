@@ -41,6 +41,25 @@ impl Default for CellState {
 
 use CellState::*;
 
+
+
+fn smooth_path(path: Vec<(u32,u32)>) -> Vec<(u32,u32)> {
+    let mut result = Vec::new();
+    if !path.is_empty() {
+        result.push(*path.first().unwrap());
+        for i in 1..path.len()-2{
+            let a = pixels_to_pos(path[i-1]);
+            let b = pixels_to_pos(path[i]);
+            let c = pixels_to_pos(path[i+1]);
+            if !(((c-a).normalized().dot_prod(&(b-a).normalized())).abs() > 0.98) {
+                result.push(path[i]);
+            }
+        }
+        result.push(*path.last().unwrap());
+    }
+    return result;
+}
+
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
@@ -50,7 +69,8 @@ pub struct AI {
     pub map_seen: Array2<CellState>,
     // Next pixel coordinates to go to
     // stored in reverse : last item of Vec is the next point
-    next_moves: Vec<(u32,u32)>,
+    next_targets: Vec<(u32,u32)>,
+    next_steps: Vec<(u32,u32)>,
 }
 
 /// position in meters
@@ -75,36 +95,55 @@ impl AI {
             collisions: Vec::new(),
             // the map is uncharted at the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
-            next_moves: Vec::new(),
+            next_targets: Vec::new(),
+            next_steps: Vec::new(),
         };
         ai.all_positions.insert(ai.app_id, Position::default());
-        ai
+
+        //
+        for i in 70..140{
+            ai.map_seen[(i,100)] = CellState::Blocked;
+        }
+        //
+
+        return ai;
     }
 
     pub fn update(&mut self, robot: &mut Robot) {
+        let self_pos = self
+                        .all_positions
+                        .get(&self.app_id)
+                        .expect("self position is missing from all_positions").clone();
+        while let Some(step) = self.next_steps.pop() {
+            if !self.next_targets.is_empty() && step == *self.next_targets.last().unwrap() {
+                break;
+            }
+            else{
+                self.mark_seen_circle_at_point(pixels_to_pos(step), 0.1);
+            }
+        }
         self.mark_seen_circle(0.1);
 
-        if let Some(destination) = self.next_moves.last(){
+        if let Some(destination) = self.next_targets.last(){
             robot.go_to(&pixels_to_pos(*destination));
-            self.next_moves.pop();
+            self.next_targets.pop();
         }
         else if let Some(target) = self.where_do_we_go() {
-            let self_pos = self
-                            .all_positions
-                            .get(&self.app_id)
-                            .expect("self position is missing from all_positions").p;
-            let delta = (target - self_pos).normalized() * 0.05;
+            let delta = (target - self_pos.p).normalized() * 0.05;
             log::info!(
                 "self_pos:{:?} frontier:{:?} goto:{:?}",
-                self_pos,
+                self_pos.p,
                 target,
                 delta
             );
-            self.next_moves = pathfinder::find_path(pos_to_pixels(self_pos), self.map_seen.clone(), pos_to_pixels(self_pos+delta));
-            if self.next_moves.is_empty(){
+            self.next_steps = pathfinder::find_path(pos_to_pixels(self_pos.p), 
+                                            self.map_seen.clone(), pos_to_pixels(self_pos.p+delta));
+            self.next_targets = smooth_path(self.next_steps.clone());
+            if self.next_targets.is_empty(){
                 log::error!("pathfinder returned empty path");
             }
-            if let Some(destination) = self.next_moves.pop(){
+            if let Some(destination) = self.next_targets.pop(){
+                log::info!("next moves : {:?}", self.next_targets);
                 robot.go_to(&pixels_to_pos(destination));
             }
             else{
@@ -161,12 +200,18 @@ impl AI {
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
+    
     fn mark_seen_circle(&mut self, radius: f32) {
         let robot = self
             .all_positions
             .get(&self.app_id)
             .expect("self position is missing from all_positions")
             .p;
+        self.mark_seen_circle_at_point(robot, radius);
+    }
+
+    fn mark_seen_circle_at_point(&mut self, robot: Point, radius: f32) {
+        
         let (rx, ry) = pos_to_pixels(robot);
         // log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as u32;
@@ -185,6 +230,7 @@ impl AI {
     /// https://www.youtube.com/watch?v=1w7OgIMMRc4
     /// If not frontier is detected, go back to the origin
     fn where_do_we_go(&self) -> Option<Point> {
+        return Option::Some(pixels_to_pos((100,0)));
         let pos = &self
             .all_positions
             .get(&self.app_id)

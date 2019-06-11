@@ -62,6 +62,7 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(Node { cost, x: curr_x, y: curr_y, parent}) = heap.pop() {
+        //log::info!("[Pathfinding] node {:?} popped out with cost {:?}", (curr_x,curr_y), cost);
         //Backtrack until we get to a position from which this point is reachable
         /*while(path.len() > 0 && !neighbors(path.last().unwrap().x,path.last().unwrap().y)){
             path.pop();
@@ -78,14 +79,17 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
         }
 
         // Important as we may have already found a better way
-        if cost > dist[(curr_x as usize, curr_y as usize)] { continue; }
+        if cost > (dist[(curr_x as usize, curr_y as usize)] 
+                    + ((curr_x - (dest.0 as i32)).pow(2) + (curr_y - (dest.1 as i32)).pow(2)) as usize)
+                     { continue; }
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
         for mv in &moves {
             let new_x = curr_x + mv.0;
             let new_y = curr_y + mv.1;
-            let new_cost = ((new_x - (dest.0 as i32))*(new_x - (dest.0 as i32)) + (new_y - (dest.1 as i32))*(new_y - (dest.1 as i32))) as usize;
+            let new_cost = dist[(curr_x as usize, curr_y as usize)] +
+                            ((new_x - (dest.0 as i32)).pow(2) + (new_y - (dest.1 as i32)).pow(2)) as usize;
             if new_x < map_seen.shape()[0] as i32 &&
                 new_y < map_seen.shape()[1] as i32 &&
                 new_x > 0 &&
@@ -98,10 +102,10 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
                                 };
 
                 // If so, add it to the frontier and continue
-                if next.cost < dist[(next.x as usize, next.y as usize)] {
+                if dist[(curr_x as usize, curr_y as usize)]+1 < dist[(new_x as usize, new_y as usize)] {
                     heap.push(next);
                     // Relaxation, we have now found a better way
-                    dist[(new_x as usize, new_y as usize)] = new_cost;
+                    dist[(new_x as usize, new_y as usize)] = dist[(curr_x as usize, curr_y as usize)]+1;
                 }
             }
         }
