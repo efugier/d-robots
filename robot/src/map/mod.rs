@@ -138,6 +138,15 @@ impl Point {
     pub fn sq_dist(self, other: Self) -> Distance {
         (self - other).sq_norm()
     }
+
+    pub fn clip_norm(self, max: Distance) -> Self {
+        let sq_norm = self.sq_norm();
+        if sq_norm <= max * max {
+            self
+        } else {
+            self / sq_norm.sqrt()
+        }
+    }
 }
 
 pub struct Segment(pub Point, pub Point);

@@ -108,11 +108,11 @@ impl AI {
         let self_pos = self
                         .all_positions
                         .get(&self.app_id)
-                        .expect("self position is missing from all_positions").clone();
+                        .expect("self position is missing from all_positions").p;
         while let Some(step) = self.next_steps.pop() {
             // We have reached a target, we need to mark every 
             // point from last target to current position as seen
-            if pixels_to_pos(step).sq_dist(self_pos.p) < 0.01 {
+            if pixels_to_pos(step).sq_dist(self_pos) < 0.01 {
                 // We have marked every step until current position as seen
                 break;
             }
@@ -127,15 +127,15 @@ impl AI {
             robot.go_to(pixels_to_pos(destination));
         }
         else if let Some(target) = self.where_do_we_go() {
-            let delta = (target - self_pos.p).normalized() * 0.05;
+            let delta = (target - self_pos).clip_norm(0.05);
             log::info!(
                 "self_pos:{:?} frontier:{:?} goto:{:?}",
-                self_pos.p,
+                self_pos,
                 target,
                 delta
             );
-            self.next_steps = pathfinder::find_path(pos_to_pixels(self_pos.p), 
-                                            self.map_seen.clone(), pos_to_pixels(self_pos.p+delta));
+            self.next_steps = pathfinder::find_path(pos_to_pixels(self_pos), 
+                                            self.map_seen.clone(), pos_to_pixels(self_pos+delta));
             self.next_targets = smooth_path(self.next_steps.clone());
             if let Some(destination) = self.next_targets.pop(){
                 log::info!("next moves : {:?}", self.next_targets);
