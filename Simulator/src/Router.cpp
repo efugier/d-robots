@@ -27,17 +27,19 @@ Router::Router(std::shared_ptr<RobotsHandler> robotList, QObject* parent) :
 
 std::string Router::cRead(int fd)
 {
-    char c;
+    char buffer[5000];
     std::string ret = "";
+    std::string strBuffer;
+    ssize_t readSize = 0;
     do {
-        if (read(fd, &c, sizeof(char)) > 0)
+        if ((readSize = read(fd, &buffer, 5000)) > 0)
         {
-            if (c != '\n')
-                ret.push_back(c);
+            strBuffer = buffer;
+            ret.append(strBuffer.substr(0, readSize));
         }
         if (!m_listen)
             return {};
-    } while (c != '\n');
+    } while (readSize == 5000);
     return ret;
 }
 
@@ -95,7 +97,7 @@ void Router::worker(std::string message)
                 {
                     if (distance(sender->position(), r.position()) < range)
                     {
-                        std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;
+                        //std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;
                         r << message;
                     }
                 }
@@ -124,7 +126,7 @@ void Router::listen(const std::string &fifoName)
         std::string message = cRead(m_fifoFd);
         if (!m_listen)
             break;
-        std::cerr << "Received message : " << message << std::endl;
+        //std::cerr << "Received message : " << message << std::endl;
 
         std::thread (&Router::worker, this, message).detach();
 

@@ -2,12 +2,14 @@
 
 #include <fstream>
 #include <thread>
+#include <pthread.h>
 
 #include <QGraphicsPixmapItem>
 
 #include <QVector2D>
 
 #define FIFO_PERMISSION 0666
+
 
 class Robot
 {
@@ -27,7 +29,8 @@ public:
 
     unsigned int id() const { return m_id; }
 
-    void instanciate(const std::string& fifoName);
+    //void instanciate(const std::string& fifoName);
+    static void* instanciate(void *arguments);
 
     QGraphicsPixmapItem* pixmapItem() const { return m_pixmap; }
     void setPixmapItem(QGraphicsPixmapItem* item) { m_pixmap = item; }
@@ -39,7 +42,15 @@ private:
     static inline std::string m_simulFifo = "";
     int m_fifoFd = 0;
 
-    std::thread m_thread;
+    //std::thread m_thread;
+    pthread_t m_thread;
+    pthread_attr_t m_threadAtt;
+    typedef struct {
+        Robot* obj;
+        std::string fifoName;
+    } threadArg;
+
+    threadArg m_threadArgs;
 
     QGraphicsPixmapItem* m_pixmap = nullptr;
 
