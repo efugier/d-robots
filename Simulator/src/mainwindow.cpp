@@ -126,6 +126,7 @@ void MainWindow::updateRobotPosition(unsigned int id)
     {
         if (!robot->pixmapItem())
         {
+            scene->addEllipse(robot->position().x() - robot->range()*100/2, robot->position().y() - robot->range()*100/2, robot->range()*100, robot->range()*100);
             robot->setPixmapItem(scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation)));
             robot->pixmapItem()->setVisible(true);
         }
@@ -133,7 +134,8 @@ void MainWindow::updateRobotPosition(unsigned int id)
         robot->pixmapItem()->setX(robot->position().x() * 100 - ITEM_WIDTH/2);
         robot->pixmapItem()->setY(robot->position().y() * 100 - ITEM_HEIGHT/2);
 
-        scene->addRect(robot->position().x() * 100, robot->position().y() * 100, 1,1);
+        scene->addLine(QLine(robot->lastPosition().x() * 100, robot->lastPosition().y() * 100,
+                             robot->position().x() * 100, robot->position().y() * 100));
         robot->pixmapItem()->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
         view->fitInView(scene->sceneRect().x(),
                         scene->sceneRect().y(),

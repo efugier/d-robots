@@ -25,7 +25,8 @@ public:
     void setRange(float range) { m_range = range; }
 
     QVector2D position() const {return m_position; }
-    void setPosition(const QVector2D& position) { m_position = position;}
+    void setPosition(const QVector2D& position) { m_lastPosition = m_position; m_position = position;}
+    QVector2D lastPosition() const { return m_lastPosition; }
 
     unsigned int id() const { return m_id; }
 
@@ -45,6 +46,7 @@ private:
     //std::thread m_thread;
     pthread_t m_thread;
     pthread_attr_t m_threadAtt;
+
     typedef struct {
         Robot* obj;
         std::string inFifoName;
@@ -56,7 +58,8 @@ private:
     QGraphicsPixmapItem* m_pixmap = nullptr;
 
 
-    float m_range = 10;
+    float m_range = 1;
     QVector2D m_position;
+    QVector2D m_lastPosition;
 };
 
