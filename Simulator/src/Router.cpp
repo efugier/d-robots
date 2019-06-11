@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+std::shared_ptr<Router> Router::m_instance;
 
 double distance(const QVector2D& pos1, const QVector2D& pos2)
 {
@@ -27,19 +28,22 @@ Router::Router(std::shared_ptr<RobotsHandler> robotList, QObject* parent) :
 
 std::string Router::cRead(int fd)
 {
-    char buffer[5000];
+    constexpr ssize_t BUFFER_SIZE = 1000000;
+    char buffer[BUFFER_SIZE];
     std::string ret = "";
-    std::string strBuffer;
+    std::string strBuffer = "";
     ssize_t readSize = 0;
     do {
-        if ((readSize = read(fd, &buffer, 5000)) > 0)
+        if ((readSize = read(fd, &buffer, BUFFER_SIZE)) > 0)
         {
             strBuffer = buffer;
-            ret.append(strBuffer.substr(0, readSize));
+            ret.append(strBuffer.substr(0, readSize-1));
+            //std::cerr << "Add " << readSize << " length buffer" << std::endl;
         }
         if (!m_listen)
             return {};
-    } while (readSize == 5000);
+    } while (buffer[readSize-1] != '\n' || readSize <= 1);
+    //std::cerr << "Last character : [" << readSize-1 << "] '" << buffer[readSize-1] << "'" << std::endl;
     return ret;
 }
 
@@ -47,6 +51,7 @@ void Router::worker(std::string message)
 {
     QJsonDocument messageJson = QJsonDocument::fromJson(QByteArray(message.c_str()));
 
+    //std::cout << "Message : " << message << std::endl;
     if (!messageJson.isObject())
     {
         std::cerr << "The message is not an Object" << std::endl;
@@ -83,6 +88,7 @@ void Router::worker(std::string message)
     }
     unsigned int id= jsonObj[KEY_SENDER_ID].toInt();
 
+
     if (m_robotList)
     {
         if (Robot* sender = m_robotList->getRobot(id))
@@ -97,7 +103,7 @@ void Router::worker(std::string message)
                 {
                     if (distance(sender->position(), r.position()) < range)
                     {
-                        //std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;
+                        std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;
                         r << message;
                     }
                 }
@@ -106,6 +112,20 @@ void Router::worker(std::string message)
     }
 }
 
+void Router::newListener(const std::string& fifoName)
+{
+    if (Router::get())
+        std::thread(&Router::listen, Router::get().get(), fifoName).detach();
+}
+
+
+std::shared_ptr<Router> Router::create(std::shared_ptr<RobotsHandler> robotList)
+{
+    if (!m_instance)
+        m_instance = std::shared_ptr<Router>(new Router(robotList));
+
+    return m_instance;
+}
 
 void Router::listen(const std::string &fifoName)
 {
@@ -126,9 +146,9 @@ void Router::listen(const std::string &fifoName)
         std::string message = cRead(m_fifoFd);
         if (!m_listen)
             break;
-        //std::cerr << "Received message : " << message << std::endl;
+        //std::cerr << fifoName << " : Received message : " << message << std::endl;
 
-        std::thread (&Router::worker, this, message).detach();
+        std::thread (&Router::worker, this, std::string(message)).detach();
 
     }
 

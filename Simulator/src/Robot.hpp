@@ -39,7 +39,7 @@ public:
 
 private:
     unsigned int m_id;
-    static inline std::string m_simulFifo = "";
+    //static inline std::string m_simulFifo = "";
     int m_fifoFd = 0;
 
     //std::thread m_thread;
@@ -47,7 +47,8 @@ private:
     pthread_attr_t m_threadAtt;
     typedef struct {
         Robot* obj;
-        std::string fifoName;
+        std::string inFifoName;
+        std::string outFifoName;
     } threadArg;
 
     threadArg m_threadArgs;

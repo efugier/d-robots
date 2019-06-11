@@ -10,15 +10,20 @@ class Router : public QObject
 {
     Q_OBJECT
 public:
-    Router(std::shared_ptr<RobotsHandler> robotList, QObject* parent = nullptr);
+    static std::shared_ptr<Router> create(std::shared_ptr<RobotsHandler> robotList);
+    static std::shared_ptr<Router> get() { return m_instance; }
 
     void listen(const std::string &fifoName);
 
     void stop();
+    static void newListener(const std::string& fifoName);
 signals:
     void updateRobotPosition(unsigned int id);
 
+
 private:
+    static std::shared_ptr<Router> m_instance;
+    Router(std::shared_ptr<RobotsHandler> robotList, QObject* parent = nullptr);
     std::string cRead(int fd);
 
     void worker(std::string message);

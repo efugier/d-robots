@@ -1,5 +1,6 @@
 #include <iostream>
 #include <QApplication>
+#include <memory>
 #include "Router.hpp"
 #include "RobotsHandler.hpp"
 #include <unistd.h>
@@ -31,20 +32,20 @@ int main(int argc, char** argv)
 
     // Generates random robots and objects for testing puroposes
     //Tester t(w, 3000);
-    Robot::setSimulationOutFifo("simulIn");
+    //Robot::setSimulationOutFifo("simulIn");
 
 
-    Router router(robotList);
+    std::shared_ptr<Router> router = Router::create(robotList);
 
-    QObject::connect(&router, SIGNAL(updateRobotPosition(unsigned int)), w, SLOT(updateRobotPosition(unsigned int)));
+    QObject::connect(router.get(), SIGNAL(updateRobotPosition(unsigned int)), w, SLOT(updateRobotPosition(unsigned int)));
 
-    std::thread listener(&Router::listen,&router,"simulIn");
-
+//    std::thread listener(&Router::listen,&router,"simulIn");
+    Router::newListener("simulIn");
 
 
     int ret = app.exec();
 
-    router.stop();
-    listener.join();
+    router->stop();
+//    listener.join();
     return ret;
 }
