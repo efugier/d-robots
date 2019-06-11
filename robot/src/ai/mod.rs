@@ -250,7 +250,7 @@ impl AI {
                             .all_positions
                             .iter()
                             .filter(|(&id, _)| id != self.app_id)
-                            .map(|(_, &other)| (-(p - other.p).norm()).exp())
+                            .map(|(_, &other)| (0.5 - (p - other.p).norm()).max(0.))
                             .sum::<f32>(),
                 )
             })
