@@ -135,13 +135,17 @@ impl AI {
             // );
             self.next_steps = pathfinder::find_path(
                 pos_to_pixels(self_pos),
-                &self.map_seen,
+                &Self::dilate_blocked(&self.map_seen, 2),
                 pos_to_pixels(target),
             );
             self.next_targets = smooth_path(&self.next_steps);
 
             if let Some(destination) = self.next_targets.pop() {
-                log::info!("next moves : {:?}", self.next_targets);
+                log::info!(
+                    "next moves : {:?}, current pos : {:?}",
+                    self.next_targets,
+                    pos_to_pixels(self_pos)
+                );
                 robot.go_to(pixels_to_pos(destination));
             } else {
                 log::error!(
@@ -150,9 +154,10 @@ impl AI {
                 );
                 let (x, y) = pos_to_pixels(target);
                 self.map_seen[(x as usize, y as usize)] = Blocked;
+                self.update(robot);
             }
         } else {
-            log::error!("nowhere to go");
+            log::error!("nowhere to go from {:?}", pos_to_pixels(self_pos));
         }
 
         self.update_debug_image();
@@ -282,6 +287,28 @@ impl AI {
                     ) {
                         if *arr.uget(n) == SeenFree {
                             *new.uget_mut(xy) = SeenFree;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        new
+    }
+
+    fn dilate_blocked(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
+        // let prev = arr;
+        let mut new = arr.clone();
+        // for _ in 0..iterations {
+        for xy in iproduct!(size..new.rows() - size, 1..new.cols() - size) {
+            unsafe {
+                if arr[xy] != Blocked {
+                    for n in iproduct!(
+                        xy.0.saturating_sub(size)..=(xy.0 + size),
+                        xy.1.saturating_sub(size)..=(xy.1 + size)
+                    ) {
+                        if *arr.uget(n) == Blocked {
+                            *new.uget_mut(xy) = Blocked;
                             break;
                         }
                     }
