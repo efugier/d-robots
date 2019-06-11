@@ -112,13 +112,6 @@ impl AI {
         }
     }
 
-    // demo app interaction
-    pub fn be_smart(&mut self) -> Option<String> {
-        self.mark_seen_circle(0.1);
-        self.update_debug_image();
-        Some(String::from("Ok"))
-    }
-
     pub fn update_robot_position(&mut self, id: AppId, pos: Position) {
         self.all_positions.insert(id, pos);
     }

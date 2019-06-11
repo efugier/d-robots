@@ -134,12 +134,6 @@ impl App {
                 }
 
                 DistantInput(m) => {
-                    // log::trace!("message {:?}", m);
-                    // AI interaction demo
-                    if let Some(msg) = self.ai.be_smart() {
-                        println!("{}", msg);
-                    }
-
                     if let Ok(msg) = Msg::from_str(&m) {
                         // do something to the decoded message
                         if !self.sent_messages_ids.contains(&msg.id) {
