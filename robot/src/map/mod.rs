@@ -144,7 +144,7 @@ impl Point {
         if sq_norm <= max * max {
             self
         } else {
-            self / sq_norm.sqrt()
+            self / sq_norm.sqrt() * max
         }
     }
 }
