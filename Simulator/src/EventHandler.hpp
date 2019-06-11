@@ -13,6 +13,9 @@ public:
 
 signals:
     void newRobot();
+    void selectNextRobot();
+    void selectPreviousRobot();
+    void toggleActive();
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;

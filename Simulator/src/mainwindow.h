@@ -43,8 +43,16 @@ public slots:
     void addObject(double x, double y);
     void createNewRobot();
 
+    void selectNextRobot();
+    void selectPreviousRobot();
+
+    void toggleActive();
 protected:
     unsigned int m_lastId = 0;
+
+    std::map<unsigned int, Robot>::iterator m_itrRobot;
+
+    QGraphicsEllipseItem* m_selectionShape;
 
     void loadMap(const QString &filename);
 

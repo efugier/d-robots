@@ -28,6 +28,9 @@ public:
     void setPosition(const QVector2D& position) { m_lastPosition = m_position; m_position = position;}
     QVector2D lastPosition() const { return m_lastPosition; }
 
+    bool active() const {return m_active;}
+    void setActive(bool active) { m_active = active; }
+
     unsigned int id() const { return m_id; }
 
     //void instanciate(const std::string& fifoName);
@@ -42,6 +45,8 @@ private:
     unsigned int m_id;
     //static inline std::string m_simulFifo = "";
     int m_fifoFd = 0;
+
+    bool m_active = true;
 
     //std::thread m_thread;
     pthread_t m_thread;
