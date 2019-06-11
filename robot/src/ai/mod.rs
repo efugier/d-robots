@@ -42,7 +42,7 @@ impl Default for CellState {
 use CellState::*;
 
 // Removes points where direction does not change from given path
-fn smooth_path(path: Vec<(u32, u32)>) -> Vec<(u32, u32)> {
+fn smooth_path(path: &[(u32, u32)]) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
     if !path.is_empty() {
         result.push(*path.first().unwrap());
@@ -123,26 +123,33 @@ impl AI {
 
         if let Some(destination) = self.next_targets.pop() {
             // We still have targets to reach
+            log::info!("go_to destination {:?}", destination);
             robot.go_to(pixels_to_pos(destination));
         } else if let Some(target) = self.where_do_we_go() {
-            let delta = (target - self_pos).clip_norm(0.05);
-            log::info!(
-                "self_pos:{:?} frontier:{:?} goto:{:?}",
-                self_pos,
-                target,
-                delta
-            );
+            // let delta = (target - self_pos).clip_norm(0.05);
+            // log::info!(
+            //     "self_pos:{:?} frontier:{:?} goto:{:?}",
+            //     self_pos,
+            //     target,
+            //     delta
+            // );
             self.next_steps = pathfinder::find_path(
                 pos_to_pixels(self_pos),
-                self.map_seen.clone(),
-                pos_to_pixels(self_pos + delta),
+                &self.map_seen,
+                pos_to_pixels(target),
             );
-            self.next_targets = smooth_path(self.next_steps.clone());
+            self.next_targets = smooth_path(&self.next_steps);
+
             if let Some(destination) = self.next_targets.pop() {
                 log::info!("next moves : {:?}", self.next_targets);
                 robot.go_to(pixels_to_pos(destination));
             } else {
-                log::error!("nowhere to go - pathfinding failed");
+                log::error!(
+                    "nowhere to go - pathfinding failed. marking target as blocked\nself_pos={:?} {:?}",
+                    self_pos, pos_to_pixels(self_pos)
+                );
+                let (x, y) = pos_to_pixels(target);
+                self.map_seen[(x as usize, y as usize)] = Blocked;
             }
         } else {
             log::error!("nowhere to go");

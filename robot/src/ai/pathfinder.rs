@@ -49,7 +49,7 @@ impl PartialOrd for Node {
 // for a simpler implementation.
 pub fn find_path(
     self_pos: (u32, u32),
-    map_seen: Array2<CellState>,
+    map_seen: &Array2<CellState>,
     dest: (u32, u32),
 ) -> Vec<(u32, u32)> {
     if dest.0 > map_seen.shape()[0] as u32 || dest.1 > map_seen.shape()[1] as u32 {
