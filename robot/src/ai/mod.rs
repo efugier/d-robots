@@ -274,14 +274,18 @@ impl AI {
         let mut new = arr.clone();
         // for _ in 0..iterations {
         for xy in iproduct!(size..new.rows() - size, 1..new.cols() - size) {
-            if arr[xy] == Uncharted
-                && iproduct!(
-                    xy.0.saturating_sub(size)..=(xy.0 + size),
-                    xy.1.saturating_sub(size)..=(xy.1 + size)
-                )
-                .any(|n| n != xy && arr[n] == SeenFree)
-            {
-                new[xy] = SeenFree
+            unsafe {
+                if arr[xy] == Uncharted {
+                    for n in iproduct!(
+                        xy.0.saturating_sub(size)..=(xy.0 + size),
+                        xy.1.saturating_sub(size)..=(xy.1 + size)
+                    ) {
+                        if *arr.uget(n) == SeenFree {
+                            *new.uget_mut(xy) = SeenFree;
+                            break;
+                        }
+                    }
+                }
             }
         }
         new
