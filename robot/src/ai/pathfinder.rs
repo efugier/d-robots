@@ -4,6 +4,8 @@ use std::usize;
 use ndarray::Array2;
 use std::collections::BinaryHeap;
 
+
+// A Node is a possible position on the grid
 #[derive(Clone, Eq, PartialEq)]
 struct Node {
     cost: usize,
@@ -38,7 +40,7 @@ impl PartialOrd for Node {
     }
 }
 
-// Dijkstra's shortest path algorithm.
+// A* algorithm.
 
 // Start at `start` and use `dist` to track the current shortest distance
 // to each node. This implementation isn't memory-efficient as it may leave duplicate
@@ -62,12 +64,7 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(Node { cost, x: curr_x, y: curr_y, parent}) = heap.pop() {
-        //log::info!("[Pathfinding] node {:?} popped out with cost {:?}", (curr_x,curr_y), cost);
-        //Backtrack until we get to a position from which this point is reachable
-        /*while(path.len() > 0 && !neighbors(path.last().unwrap().x,path.last().unwrap().y)){
-            path.pop();
-        }*/
-        // Alternatively we could have continued to find all shortest paths
+        // Destination reached
         if (curr_x,curr_y) == (dest.0 as i32, dest.1 as i32) { 
             path.push((curr_x as u32, curr_y as u32));
             let mut prev = parent;
@@ -78,7 +75,8 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
             return path;
         }
 
-        // Important as we may have already found a better way
+        // Comparing costs as we may have already found a better way
+        // Cost = effective distance from origin + square distance to destination
         if cost > (dist[(curr_x as usize, curr_y as usize)] 
                     + ((curr_x - (dest.0 as i32)).pow(2) + (curr_y - (dest.1 as i32)).pow(2)) as usize)
                      { continue; }
@@ -104,14 +102,14 @@ pub fn find_path(self_pos: (u32,u32), map_seen: Array2<CellState>, dest: (u32,u3
                 // If so, add it to the frontier and continue
                 if dist[(curr_x as usize, curr_y as usize)]+1 < dist[(new_x as usize, new_y as usize)] {
                     heap.push(next);
-                    // Relaxation, we have now found a better way
+                    // Update, we have now found a better way
                     dist[(new_x as usize, new_y as usize)] = dist[(curr_x as usize, curr_y as usize)]+1;
                 }
             }
         }
     }
 
-    // Goal not reachable
+    // Destination not reachable
     log::error!("[Pathfinding] destination point {:?} is unreachable", (dest.0,dest.1));
     return path;
 }

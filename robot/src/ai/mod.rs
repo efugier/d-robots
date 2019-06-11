@@ -42,7 +42,7 @@ impl Default for CellState {
 use CellState::*;
 
 
-
+// Removes points where direction does not change from given path 
 fn smooth_path(path: Vec<(u32,u32)>) -> Vec<(u32,u32)> {
     let mut result = Vec::new();
     if !path.is_empty() {
@@ -51,7 +51,7 @@ fn smooth_path(path: Vec<(u32,u32)>) -> Vec<(u32,u32)> {
             let a = pixels_to_pos(path[i-1]);
             let b = pixels_to_pos(path[i]);
             let c = pixels_to_pos(path[i+1]);
-            if !(((c-a).normalized().dot_prod(&(b-a).normalized())).abs() > 0.98) {
+            if !(((c-a).normalized().dot_prod((b-a).normalized())).abs() > 0.98) {
                 result.push(path[i]);
             }
         }
@@ -70,6 +70,7 @@ pub struct AI {
     // Next pixel coordinates to go to
     // stored in reverse : last item of Vec is the next point
     next_targets: Vec<(u32,u32)>,
+    // Used to mark area as seen between two target points
     next_steps: Vec<(u32,u32)>,
 }
 
@@ -100,12 +101,6 @@ impl AI {
         };
         ai.all_positions.insert(ai.app_id, Position::default());
 
-        //
-        for i in 70..140{
-            ai.map_seen[(i,100)] = CellState::Blocked;
-        }
-        //
-
         return ai;
     }
 
@@ -115,7 +110,10 @@ impl AI {
                         .get(&self.app_id)
                         .expect("self position is missing from all_positions").clone();
         while let Some(step) = self.next_steps.pop() {
-            if !self.next_targets.is_empty() && step == *self.next_targets.last().unwrap() {
+            // We have reached a target, we need to mark every 
+            // point from last target to current position as seen
+            if pixels_to_pos(step).sq_dist(self_pos.p) < 0.01 {
+                // We have marked every step until current position as seen
                 break;
             }
             else{
@@ -124,9 +122,9 @@ impl AI {
         }
         self.mark_seen_circle(0.1);
 
-        if let Some(destination) = self.next_targets.last(){
-            robot.go_to(&pixels_to_pos(*destination));
-            self.next_targets.pop();
+        if let Some(destination) = self.next_targets.pop(){
+            // We still have targets to reach
+            robot.go_to(pixels_to_pos(destination));
         }
         else if let Some(target) = self.where_do_we_go() {
             let delta = (target - self_pos.p).normalized() * 0.05;
@@ -139,12 +137,9 @@ impl AI {
             self.next_steps = pathfinder::find_path(pos_to_pixels(self_pos.p), 
                                             self.map_seen.clone(), pos_to_pixels(self_pos.p+delta));
             self.next_targets = smooth_path(self.next_steps.clone());
-            if self.next_targets.is_empty(){
-                log::error!("pathfinder returned empty path");
-            }
             if let Some(destination) = self.next_targets.pop(){
                 log::info!("next moves : {:?}", self.next_targets);
-                robot.go_to(&pixels_to_pos(destination));
+                robot.go_to(pixels_to_pos(destination));
             }
             else{
                 log::error!("nowhere to go - pathfinding failed");
@@ -179,6 +174,10 @@ impl AI {
         let (x, y) = pos_to_pixels(point);
         self.map_seen[(x as usize, y as usize)] = Blocked;
         // self.mark_seen_circle(0.1);
+
+        //removing planned path - path will be re-computed
+        self.next_steps = Vec::new();
+        self.next_targets = Vec::new();
 
         robot.forward(-0.1);
         self.update_debug_image();
@@ -230,7 +229,6 @@ impl AI {
     /// https://www.youtube.com/watch?v=1w7OgIMMRc4
     /// If not frontier is detected, go back to the origin
     fn where_do_we_go(&self) -> Option<Point> {
-        return Option::Some(pixels_to_pos((100,0)));
         let pos = &self
             .all_positions
             .get(&self.app_id)
