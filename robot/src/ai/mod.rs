@@ -241,8 +241,7 @@ impl AI {
         // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
         let front = pos.p + Point { x: 0., y: 0.05 }.rotate(pos.a);
         self.detect_frontiers()
-            .iter()
-            .map(|&p| {
+            .map(|p| {
                 (
                     p,
                     (p - front).sq_norm()
@@ -261,12 +260,13 @@ impl AI {
     /// A frontier is a SeenFree pixel with at least one Uncharted pixel
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
-    fn detect_frontiers(&self) -> Vec<Point> {
-        let arr = Self::dilate(&self.map_seen, 2);
-        arr.indexed_iter()
-            .filter(|(xy, _)| Self::is_frontier(&arr, *xy))
+    fn detect_frontiers(&self) -> impl Iterator<Item = Point> + '_ {
+        // let arr = Self::dilate(&self.map_seen, 5);
+        let arr = self.map_seen.clone();
+        self.map_seen
+            .indexed_iter()
+            .filter(move |(xy, _)| Self::is_frontier(&arr, *xy))
             .map(|((x, y), _)| pixels_to_pos((x as u32, y as u32)))
-            .collect()
     }
 
     fn dilate(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
@@ -331,8 +331,7 @@ impl AI {
             }
         }
         self.detect_frontiers()
-            .iter()
-            .for_each(|&f| img[pos_to_pixels(f)] = Rgb([0, 200, 0]));
+            .for_each(|f| img[pos_to_pixels(f)] = Rgb([0, 200, 0]));
 
         for (&id, pos) in self.all_positions.iter() {
             let color = if id == self.app_id {
