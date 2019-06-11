@@ -243,9 +243,20 @@ impl AI {
         let front = pos.p + Point { x: 0., y: 0.05 }.rotate(pos.a);
         self.detect_frontiers()
             .iter()
-            .map(|p| (p, (*p - front).sq_norm()))
+            .map(|&p| {
+                (
+                    p,
+                    (p - front).sq_norm()
+                        + self
+                            .all_positions
+                            .iter()
+                            .filter(|(&id, _)| id != self.app_id)
+                            .map(|(_, &other)| (-(p - other.p).norm()).exp())
+                            .sum::<f32>(),
+                )
+            })
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
-            .map(|(p, _)| *p)
+            .map(|(p, _)| p)
         // .unwrap_or(&Point::zero())
     }
 
