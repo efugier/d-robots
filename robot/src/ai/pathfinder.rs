@@ -91,15 +91,6 @@ pub fn find_path(
             return path;
         }
 
-        // Comparing costs as we may have already found a better way
-        // Cost = effective distance from origin + square distance to destination
-        // if cost
-        //     > (dist[(curr_x as usize, curr_y as usize)]
-        //         + ((curr_x - (dest.0 as i32)).pow(2) + (curr_y - (dest.1 as i32)).pow(2)) as usize)
-        // {
-        //     continue;
-        // }
-
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
         for mv in &moves {

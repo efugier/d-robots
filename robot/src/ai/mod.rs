@@ -206,7 +206,6 @@ impl AI {
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
-
     fn mark_seen_circle(&mut self, radius: f32) {
         let robot = self
             .all_positions
@@ -257,7 +256,6 @@ impl AI {
             })
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
             .map(|(p, _)| p)
-        // .unwrap_or(&Point::zero())
     }
 
     /// A frontier is a SeenFree pixel with at least one Uncharted pixel
