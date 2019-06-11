@@ -130,8 +130,10 @@ void MainWindow::updateRobotPosition(unsigned int id)
             robot->pixmapItem()->setVisible(true);
         }
 
-        robot->pixmapItem()->setX(robot->position().x());
-        robot->pixmapItem()->setY(robot->position().y());
+        robot->pixmapItem()->setX(robot->position().x() * 100 - ITEM_WIDTH/2);
+        robot->pixmapItem()->setY(robot->position().y() * 100 - ITEM_HEIGHT/2);
+
+        scene->addRect(robot->position().x() * 100, robot->position().y() * 100, 1,1);
         robot->pixmapItem()->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
         view->fitInView(scene->sceneRect().x(),
                         scene->sceneRect().y(),
