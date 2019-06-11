@@ -50,13 +50,13 @@ fn smooth_path(path: Vec<(u32, u32)>) -> Vec<(u32, u32)> {
             let a = pixels_to_pos(path[i - 1]);
             let b = pixels_to_pos(path[i]);
             let c = pixels_to_pos(path[i + 1]);
-            if (((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.98) {
+            if ((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.98 {
                 result.push(path[i]);
             }
         }
         result.push(*path.last().unwrap());
     }
-    return result;
+    result
 }
 
 #[derive(Debug)]
@@ -100,7 +100,7 @@ impl AI {
         };
         ai.all_positions.insert(ai.app_id, Position::default());
 
-        return ai;
+        ai
     }
 
     pub fn update(&mut self, robot: &mut Robot) {

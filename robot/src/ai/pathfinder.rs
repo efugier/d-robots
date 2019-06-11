@@ -155,5 +155,5 @@ pub fn find_path(
         "[Pathfinding] destination point {:?} is unreachable",
         (dest.0, dest.1)
     );
-    return path;
+    path
 }
