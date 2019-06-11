@@ -262,21 +262,39 @@ impl AI {
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
     fn detect_frontiers(&self) -> Vec<Point> {
-        self.map_seen
-            .indexed_iter()
-            .filter(|(xy, _)| self.is_frontier(*xy))
+        let arr = Self::dilate(&self.map_seen, 2);
+        arr.indexed_iter()
+            .filter(|(xy, _)| Self::is_frontier(&arr, *xy))
             .map(|((x, y), _)| pixels_to_pos((x as u32, y as u32)))
             .collect()
     }
 
-    /// Is the xy pixel a frontier ? (SeenFree and has an Uncharted pixel around it)
-    fn is_frontier(&self, xy: (usize, usize)) -> bool {
-        self.map_seen[xy] == SeenFree
+    fn dilate(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
+        // let prev = arr;
+        let mut new = arr.clone();
+        // for _ in 0..iterations {
+        for xy in iproduct!(size..new.rows() - size, 1..new.cols() - size) {
+            if arr[xy] == Uncharted
+                && iproduct!(
+                    xy.0.saturating_sub(size)..=(xy.0 + size),
+                    xy.1.saturating_sub(size)..=(xy.1 + size)
+                )
+                .any(|n| n != xy && arr[n] == SeenFree)
+            {
+                new[xy] = SeenFree
+            }
+        }
+        new
+    }
+
+    /// Is the xy pixel a frontier ? (Uncharted and has a SeenFree pixel around it)
+    fn is_frontier(arr: &Array2<CellState>, xy: (usize, usize)) -> bool {
+        arr[xy] == Uncharted
             && iproduct!(
                 xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
                 xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
             )
-            .any(|coords| coords != xy && self.map_seen[coords] == Uncharted)
+            .any(|coords| coords != xy && arr[coords] == SeenFree)
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
@@ -302,12 +320,15 @@ impl AI {
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
             img[(x as u32, y as u32)] = match seen {
-                _ if self.is_frontier((x, y)) => Rgb([0, 200, 0]),
+                // _ if self.is_frontier((x, y)) => Rgb([0, 200, 0]),
                 SeenFree => Rgb([200, 200, 200]),
                 Blocked => Rgb([0, 0, 0]),
                 Uncharted => Rgb([255, 255, 255]),
             }
         }
+        self.detect_frontiers()
+            .iter()
+            .for_each(|&f| img[pos_to_pixels(f)] = Rgb([0, 200, 0]));
 
         for (&id, pos) in self.all_positions.iter() {
             let color = if id == self.app_id {
