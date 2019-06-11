@@ -24,6 +24,10 @@ MainWindow::MainWindow(std::shared_ptr<RobotsHandler> robotList, QWidget *parent
     std::cerr << "MainWindow created" << std::endl;
     if(robotPm->isNull()) std::cerr << "Error creating pixmap" << std::endl;
 
+    //m_selectionShape.setVisible(false);
+    m_selectionShape = scene->addEllipse(0,0,20,20);
+    m_selectionShape->setVisible(false);
+
     QString fileName = QFileDialog::getOpenFileName(this,
         "Ouvrir la carte", QApplication::applicationDirPath(), "Fichier JSON (*.json)");
     loadMap(fileName);
@@ -122,20 +126,29 @@ void MainWindow::updateRobotPosition(unsigned int id)
 {
     if (!m_robotList)
         return;
+    if (m_itrRobot == std::map<unsigned int, Robot>::iterator{})
+        m_itrRobot = m_robotList->begin();
     if (Robot* robot = m_robotList->getRobot(id))
     {
         if (!robot->pixmapItem())
         {
-            scene->addEllipse(robot->position().x() - robot->range()*100/2, robot->position().y() - robot->range()*100/2, robot->range()*100, robot->range()*100);
             robot->setPixmapItem(scene->addPixmap(robotPm->scaled(ITEM_WIDTH,ITEM_HEIGHT,Qt::KeepAspectRatio, Qt::FastTransformation)));
             robot->pixmapItem()->setVisible(true);
+        }
+
+        if (m_itrRobot->first == id)
+        {
+            m_selectionShape->setVisible(true);
+            m_selectionShape->setPos(robot->position().x() * 100 - m_selectionShape->rect().width()/2,
+                                     robot->position().y() * 100 - m_selectionShape->rect().height()/2);
         }
 
         robot->pixmapItem()->setX(robot->position().x() * 100 - ITEM_WIDTH/2);
         robot->pixmapItem()->setY(robot->position().y() * 100 - ITEM_HEIGHT/2);
 
         scene->addLine(QLine(robot->lastPosition().x() * 100, robot->lastPosition().y() * 100,
-                             robot->position().x() * 100, robot->position().y() * 100));
+                             robot->position().x() * 100, robot->position().y() * 100),
+                       QPen(QColor(Qt::GlobalColor::gray)));
         robot->pixmapItem()->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
         view->fitInView(scene->sceneRect().x(),
                         scene->sceneRect().y(),
@@ -161,4 +174,36 @@ void MainWindow::createNewRobot()
         });
 
     }
+}
+
+void MainWindow::selectNextRobot()
+{
+    if (m_itrRobot == std::map<unsigned int, Robot>::iterator{})
+        return;
+    std::cerr << "Next robot" << std::endl;
+    ++m_itrRobot;
+    if (m_itrRobot == m_robotList->end())
+        m_itrRobot = m_robotList->begin();
+    m_selectionShape->setPos(m_itrRobot->second.position().x() * 100 - m_selectionShape->rect().width()/2,
+                             m_itrRobot->second.position().y() * 100 - m_selectionShape->rect().height()/2);
+}
+
+void MainWindow::selectPreviousRobot()
+{
+    if (m_itrRobot == std::map<unsigned int, Robot>::iterator{})
+        return;
+    std::cerr << "Previous robot" << std::endl;
+    if (m_itrRobot == m_robotList->begin())
+        m_itrRobot = m_robotList->end();
+    --m_itrRobot;
+    m_selectionShape->setPos(m_itrRobot->second.position().x() * 100 - m_selectionShape->rect().width()/2,
+                             m_itrRobot->second.position().y() * 100 - m_selectionShape->rect().height()/2);
+}
+
+void MainWindow::toggleActive()
+{
+    if (m_itrRobot == std::map<unsigned int, Robot>::iterator{})
+        return;
+    m_itrRobot->second.setActive(!m_itrRobot->second.active());
+    std::cerr << m_itrRobot->first << ": " << m_itrRobot->second.active() << std::endl;
 }

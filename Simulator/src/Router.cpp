@@ -93,6 +93,9 @@ void Router::worker(std::string message)
     {
         if (Robot* sender = m_robotList->getRobot(id))
         {
+            if (!sender->active())
+                return;
+
             sender->setPosition(pos);
             emit(updateRobotPosition(id));
 
@@ -101,6 +104,8 @@ void Router::worker(std::string message)
             {
                 if (rId != id)
                 {
+                    if (!r.active())
+                        continue;
                     if (distance(sender->position(), r.position()) < range)
                     {
                         std::cerr << "Message from " << id << " transmitted to " << rId << std::endl;

@@ -29,6 +29,9 @@ int main(int argc, char** argv)
 
     w->installEventFilter(&eventHandler);
     QObject::connect(&eventHandler, SIGNAL(newRobot()), w, SLOT(createNewRobot()));
+    QObject::connect(&eventHandler, SIGNAL(selectNextRobot()), w, SLOT(selectNextRobot()));
+    QObject::connect(&eventHandler, SIGNAL(selectPreviousRobot()), w, SLOT(selectPreviousRobot()));
+    QObject::connect(&eventHandler, SIGNAL(toggleActive()), w, SLOT(toggleActive()));
 
     // Generates random robots and objects for testing puroposes
     //Tester t(w, 3000);
