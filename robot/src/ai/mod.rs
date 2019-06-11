@@ -8,7 +8,7 @@ use itertools::iproduct;
 use log;
 use ndarray::Array2;
 use ndarray::Axis;
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::app::AppId;
 use crate::map::{Point, Position};
@@ -41,17 +41,16 @@ impl Default for CellState {
 
 use CellState::*;
 
-
-// Removes points where direction does not change from given path 
-fn smooth_path(path: Vec<(u32,u32)>) -> Vec<(u32,u32)> {
+// Removes points where direction does not change from given path
+fn smooth_path(path: Vec<(u32, u32)>) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
     if !path.is_empty() {
         result.push(*path.first().unwrap());
-        for i in 1..path.len()-2{
-            let a = pixels_to_pos(path[i-1]);
+        for i in 1..path.len() - 2 {
+            let a = pixels_to_pos(path[i - 1]);
             let b = pixels_to_pos(path[i]);
-            let c = pixels_to_pos(path[i+1]);
-            if !(((c-a).normalized().dot_prod((b-a).normalized())).abs() > 0.98) {
+            let c = pixels_to_pos(path[i + 1]);
+            if (((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.98) {
                 result.push(path[i]);
             }
         }
@@ -69,9 +68,9 @@ pub struct AI {
     pub map_seen: Array2<CellState>,
     // Next pixel coordinates to go to
     // stored in reverse : last item of Vec is the next point
-    next_targets: Vec<(u32,u32)>,
+    next_targets: Vec<(u32, u32)>,
     // Used to mark area as seen between two target points
-    next_steps: Vec<(u32,u32)>,
+    next_steps: Vec<(u32, u32)>,
 }
 
 /// position in meters
@@ -106,27 +105,26 @@ impl AI {
 
     pub fn update(&mut self, robot: &mut Robot) {
         let self_pos = self
-                        .all_positions
-                        .get(&self.app_id)
-                        .expect("self position is missing from all_positions").p;
+            .all_positions
+            .get(&self.app_id)
+            .expect("self position is missing from all_positions")
+            .p;
         while let Some(step) = self.next_steps.pop() {
-            // We have reached a target, we need to mark every 
+            // We have reached a target, we need to mark every
             // point from last target to current position as seen
             if pixels_to_pos(step).sq_dist(self_pos) < 0.01 {
                 // We have marked every step until current position as seen
                 break;
-            }
-            else{
+            } else {
                 self.mark_seen_circle_at_point(pixels_to_pos(step), 0.1);
             }
         }
         self.mark_seen_circle(0.1);
 
-        if let Some(destination) = self.next_targets.pop(){
+        if let Some(destination) = self.next_targets.pop() {
             // We still have targets to reach
             robot.go_to(pixels_to_pos(destination));
-        }
-        else if let Some(target) = self.where_do_we_go() {
+        } else if let Some(target) = self.where_do_we_go() {
             let delta = (target - self_pos).clip_norm(0.05);
             log::info!(
                 "self_pos:{:?} frontier:{:?} goto:{:?}",
@@ -134,14 +132,16 @@ impl AI {
                 target,
                 delta
             );
-            self.next_steps = pathfinder::find_path(pos_to_pixels(self_pos), 
-                                            self.map_seen.clone(), pos_to_pixels(self_pos+delta));
+            self.next_steps = pathfinder::find_path(
+                pos_to_pixels(self_pos),
+                self.map_seen.clone(),
+                pos_to_pixels(self_pos + delta),
+            );
             self.next_targets = smooth_path(self.next_steps.clone());
-            if let Some(destination) = self.next_targets.pop(){
+            if let Some(destination) = self.next_targets.pop() {
                 log::info!("next moves : {:?}", self.next_targets);
                 robot.go_to(pixels_to_pos(destination));
-            }
-            else{
+            } else {
                 log::error!("nowhere to go - pathfinding failed");
             }
         } else {
@@ -199,7 +199,7 @@ impl AI {
     }
 
     /// mark the area around the robot as seen (in a circle, radius in meters)
-    
+
     fn mark_seen_circle(&mut self, radius: f32) {
         let robot = self
             .all_positions
@@ -210,7 +210,6 @@ impl AI {
     }
 
     fn mark_seen_circle_at_point(&mut self, robot: Point, radius: f32) {
-        
         let (rx, ry) = pos_to_pixels(robot);
         // log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as u32;
@@ -282,7 +281,7 @@ impl AI {
         if self.debug_counter % 2 != 0 {
             return;
         }
-        
+
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
