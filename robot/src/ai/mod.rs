@@ -8,7 +8,7 @@ use itertools::iproduct;
 use log;
 use ndarray::Array2;
 use ndarray::Axis;
-use serde::{Deserialize, Serialize};
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
 use crate::app::AppId;
 use crate::map::{Point, Position};
@@ -23,7 +23,8 @@ const MAP_PWIDTH: usize = (MAP_WIDTH * PIXELS_PER_METER) as usize;
 const MAP_PHEIGHT: usize = (MAP_HEIGHT * PIXELS_PER_METER) as usize;
 const COLLISION_MERGE_DISTANCE: f32 = 0.1;
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Copy, Clone, Serialize_repr, Deserialize_repr, Debug, PartialEq)]
+#[repr(u8)]
 pub enum CellState {
     Uncharted,
     SeenFree,
@@ -219,6 +220,7 @@ impl AI {
         if self.debug_counter % 2 != 0 {
             return;
         }
+        
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
