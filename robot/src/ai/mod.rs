@@ -156,6 +156,7 @@ impl AI {
                 );
                 let (x, y) = pos_to_pixels(target);
                 self.map_seen[(x as usize, y as usize)] = Blocked;
+                self.update_debug_image();
                 self.update(robot);
                 return;
             }
