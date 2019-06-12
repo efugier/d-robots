@@ -59,7 +59,6 @@ impl Robot {
 
     // not sure if this deserve its own function
     // TODO: check number of use cases in the near future
-    #[cfg(debug_assertions)]
     fn send_to_app_delayed(&self, event: Event, delay: Duration) {
         let tx = self.app_tx.clone();
         thread::spawn(move || {

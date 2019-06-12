@@ -8,11 +8,13 @@ use itertools::iproduct;
 use log;
 use ndarray::Array2;
 use ndarray::Axis;
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::app::AppId;
 use crate::map::{Point, Position};
 use crate::robot::Robot;
+
+mod pathfinder;
 
 const MAP_WIDTH: u32 = 2;
 const MAP_HEIGHT: u32 = 3; // = depth, i.e. dimension in front of the robot
@@ -39,6 +41,26 @@ impl Default for CellState {
 
 use CellState::*;
 
+// Removes points where direction does not change from given path
+fn smooth_path(path: &[(u32, u32)]) -> Vec<(u32, u32)> {
+    let mut result = Vec::new();
+    if !path.is_empty() {
+        result.push(*path.first().unwrap());
+        for i in 1..path.len() - 2 {
+            let a = pixels_to_pos(path[i - 1]);
+            let b = pixels_to_pos(path[i]);
+            let c = pixels_to_pos(path[i + 1]);
+            if ((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.98
+                && b.sq_dist(pixels_to_pos(*result.last().unwrap())) < 0.05
+            {
+                result.push(path[i]);
+            }
+        }
+        result.push(*path.last().unwrap());
+    }
+    result
+}
+
 #[derive(Debug)]
 pub struct AI {
     app_id: AppId,
@@ -46,6 +68,11 @@ pub struct AI {
     all_positions: HashMap<AppId, Position>,
     collisions: Vec<Point>,
     pub map_seen: Array2<CellState>,
+    // Next pixel coordinates to go to
+    // stored in reverse : last item of Vec is the next point
+    next_targets: Vec<(u32, u32)>,
+    // Used to mark area as seen between two target points
+    next_steps: Vec<(u32, u32)>,
 }
 
 /// position in meters
@@ -70,30 +97,70 @@ impl AI {
             collisions: Vec::new(),
             // the map is uncharted at the start
             map_seen: Array2::<CellState>::default((MAP_PWIDTH, MAP_PHEIGHT)),
+            next_targets: Vec::new(),
+            next_steps: Vec::new(),
         };
         ai.all_positions.insert(ai.app_id, Position::default());
+
         ai
     }
 
     pub fn update(&mut self, robot: &mut Robot) {
+        let self_pos = self
+            .all_positions
+            .get(&self.app_id)
+            .expect("self position is missing from all_positions")
+            .p;
+        while let Some(step) = self.next_steps.pop() {
+            // We have reached a target, we need to mark every
+            // point from last target to current position as seen
+            if pixels_to_pos(step).sq_dist(self_pos) < 0.01 {
+                // We have marked every step until current position as seen
+                break;
+            } else {
+                self.mark_seen_circle_at_point(pixels_to_pos(step), 0.1);
+            }
+        }
         self.mark_seen_circle(0.1);
 
-        if let Some(target) = self.where_do_we_go() {
-            let self_pos = self
-                .all_positions
-                .get(&self.app_id)
-                .expect("self position is missing from all_positions")
-                .p;
-            let delta = (target - self_pos).normalized() * 0.05;
-            log::info!(
-                "self_pos:{:?} frontier:{:?} goto:{:?}",
-                self_pos,
-                target,
-                delta
+        if let Some(destination) = self.next_targets.pop() {
+            // We still have targets to reach
+            log::info!("go_to destination {:?}", destination);
+            robot.go_to(pixels_to_pos(destination));
+        } else if let Some(target) = self.where_do_we_go() {
+            // let delta = (target - self_pos).clip_norm(0.05);
+            // log::info!(
+            //     "self_pos:{:?} frontier:{:?} goto:{:?}",
+            //     self_pos,
+            //     target,
+            //     delta
+            // );
+            self.next_steps = pathfinder::find_path(
+                pos_to_pixels(self_pos),
+                &Self::dilate_blocked(&self.map_seen, 1),
+                pos_to_pixels(target),
             );
-            robot.go_to(self_pos + delta);
+            self.next_targets = smooth_path(&self.next_steps);
+
+            if let Some(destination) = self.next_targets.pop() {
+                log::info!(
+                    "next moves : {:?}, current pos : {:?}",
+                    self.next_targets,
+                    pos_to_pixels(self_pos)
+                );
+                robot.go_to(pixels_to_pos(destination));
+            } else {
+                log::error!(
+                    "nowhere to go - pathfinding failed. marking target as blocked\nself_pos={:?} {:?}",
+                    self_pos, pos_to_pixels(self_pos)
+                );
+                let (x, y) = pos_to_pixels(target);
+                self.map_seen[(x as usize, y as usize)] = Blocked;
+                self.update(robot);
+                return;
+            }
         } else {
-            log::error!("nowhere to go");
+            log::error!("nowhere to go from {:?}", pos_to_pixels(self_pos));
         }
 
         self.update_debug_image();
@@ -123,6 +190,10 @@ impl AI {
         self.map_seen[(x as usize, y as usize)] = Blocked;
         // self.mark_seen_circle(0.1);
 
+        //removing planned path - path will be re-computed
+        self.next_steps = Vec::new();
+        self.next_targets = Vec::new();
+
         robot.forward(-0.1);
         self.update_debug_image();
     }
@@ -149,6 +220,10 @@ impl AI {
             .get(&self.app_id)
             .expect("self position is missing from all_positions")
             .p;
+        self.mark_seen_circle_at_point(robot, radius);
+    }
+
+    fn mark_seen_circle_at_point(&mut self, robot: Point, radius: f32) {
         let (rx, ry) = pos_to_pixels(robot);
         // log::info!("MarkSeen pos={:?} pix={:?}", robot, (rx, ry));
         let radius_p = (radius * PIXELS_PER_METER as f32).ceil() as u32;
@@ -174,32 +249,91 @@ impl AI {
         // point a little bit in front of the robot, because i want to prioritise frontier points in front of the robot
         let front = pos.p + Point { x: 0., y: 0.05 }.rotate(pos.a);
         self.detect_frontiers()
-            .iter()
-            .map(|p| (p, (*p - front).sq_norm()))
+            .map(|p| {
+                (
+                    p,
+                    (p - front).sq_norm()
+                        + self
+                            .all_positions
+                            .iter()
+                            .filter(|(&id, _)| id != self.app_id)
+                            .map(|(_, &other)| (0.5 - (p - other.p).norm()).max(0.))
+                            .sum::<f32>(),
+                )
+            })
             .min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).expect("NaN here ?"))
-            .map(|(p, _)| *p)
-        // .unwrap_or(&Point::zero())
+            .map(|(p, _)| p)
     }
 
     /// A frontier is a SeenFree pixel with at least one Uncharted pixel
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
-    fn detect_frontiers(&self) -> Vec<Point> {
+    fn detect_frontiers(&self) -> impl Iterator<Item = Point> + '_ {
+        let arr = Self::dilate(&self.map_seen, 4);
+        // let arr = self.map_seen.clone();
         self.map_seen
             .indexed_iter()
-            .filter(|(xy, _)| self.is_frontier(*xy))
+            .filter(move |(xy, _)| Self::is_frontier(&arr, *xy))
             .map(|((x, y), _)| pixels_to_pos((x as u32, y as u32)))
-            .collect()
     }
 
-    /// Is the xy pixel a frontier ? (SeenFree and has an Uncharted pixel around it)
-    fn is_frontier(&self, xy: (usize, usize)) -> bool {
-        self.map_seen[xy] == SeenFree
+    fn dilate(arr: &Array2<CellState>, iterations: u32) -> Array2<CellState> {
+        let mut prev = arr.clone(); // TODO find a way to avoid cloning here
+        let mut new = arr.clone();
+        const SIZE: usize = 1;
+        for _ in 0..iterations {
+            for xy in iproduct!(0..arr.rows() - SIZE, 0..arr.cols() - SIZE) {
+                if new[xy] == Uncharted {
+                    let mut uncharted = 0;
+                    let mut free = 0;
+                    for n in iproduct!(
+                        xy.0.saturating_sub(SIZE)..=(xy.0 + SIZE).min(arr.rows() - 1),
+                        xy.1.saturating_sub(SIZE)..=(xy.1 + SIZE).min(arr.cols() - 1)
+                    ) {
+                        if n == xy {
+                            continue;
+                        }
+                        if new[n] == Uncharted {
+                            uncharted += 1;
+                        }
+                        if prev[n] == SeenFree {
+                            free += 1;
+                        }
+                    }
+                    if uncharted > 0 && free > 0 {
+                        new[xy] = SeenFree;
+                    }
+                }
+            }
+            prev = new;
+            new = prev.clone();
+        }
+        new
+    }
+
+    fn dilate_blocked(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
+        let mut new = arr.clone();
+        for xy in iproduct!(0..new.rows(), 0..new.cols()) {
+            if arr[xy] == Blocked {
+                for n in iproduct!(
+                    xy.0.saturating_sub(size)..=(xy.0 + size).min(arr.rows() - 1),
+                    xy.1.saturating_sub(size)..=(xy.1 + size).min(arr.cols() - 1)
+                ) {
+                    new[n] = Blocked;
+                }
+            }
+        }
+        new
+    }
+
+    /// Is the xy pixel a frontier ? (Uncharted and has a SeenFree pixel around it)
+    fn is_frontier(arr: &Array2<CellState>, xy: (usize, usize)) -> bool {
+        arr[xy] == Uncharted
             && iproduct!(
                 xy.0.saturating_sub(1)..MAP_PWIDTH.min(xy.0 + 2),
                 xy.1.saturating_sub(1)..MAP_PHEIGHT.min(xy.1 + 2)
             )
-            .any(|coords| coords != xy && self.map_seen[coords] == Uncharted)
+            .any(|coords| coords != xy && arr[coords] == SeenFree)
     }
 
     fn draw_robot(&self, img: &mut RgbImage, pos: &Position, color: Rgb<u8>) {
@@ -220,17 +354,19 @@ impl AI {
         if self.debug_counter % 2 != 0 {
             return;
         }
-        
+
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
         for ((x, y), seen) in self.map_seen.indexed_iter() {
             img[(x as u32, y as u32)] = match seen {
-                _ if self.is_frontier((x, y)) => Rgb([0, 200, 0]),
+                // _ if self.is_frontier((x, y)) => Rgb([0, 200, 0]),
                 SeenFree => Rgb([200, 200, 200]),
                 Blocked => Rgb([0, 0, 0]),
                 Uncharted => Rgb([255, 255, 255]),
             }
         }
+        self.detect_frontiers()
+            .for_each(|f| img[pos_to_pixels(f)] = Rgb([0, 200, 0]));
 
         for (&id, pos) in self.all_positions.iter() {
             let color = if id == self.app_id {

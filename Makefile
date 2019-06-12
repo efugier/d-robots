@@ -11,7 +11,7 @@ QMAKE=qmake-qt5
 MAKE=make
 PROCESSUS=4
 
-CARGO=$(shell which cargo)
+CARGO=cargo
 
 
 all: buildSimu buildRobot
@@ -23,7 +23,7 @@ buildSimu: buildDir
 
 buildRobot: buildDir
 	echo "Cargo : ${CARGO}"
-	${CARGO} build --release --jobs ${PROCESSUS} --target-dir ${BUILD_DIR} --manifest-path ${ROBOT_DIR}/Cargo.toml
+	${CARGO} build --release --target-dir ${BUILD_DIR} --manifest-path ${ROBOT_DIR}/Cargo.toml
 
 buildDir:
 	mkdir -p ${BUILD_DIR}
