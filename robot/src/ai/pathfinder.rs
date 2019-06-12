@@ -9,7 +9,7 @@ use std::usize;
 struct Node {
     cost: f32,
     xy: (usize, usize),
-    parent: Option<Box<Node>>,
+    parent: usize,
 }
 
 impl Eq for Node {}
@@ -64,6 +64,7 @@ pub fn find_path(
         (1, -1),
     ];
     let mut path = Vec::new();
+    let mut parents = Vec::new();
 
     // dist[node] = current shortest distance from `start` to `node`
     let mut dist = map_seen.map(|_| usize::MAX);
@@ -72,24 +73,27 @@ pub fn find_path(
 
     // We're at `start`, with a zero cost
     dist[start] = 0;
-    heap.push(Node {
+    let first_node = Node {
         cost: 0.,
         xy: start,
-        parent: None,
-    });
-
+        parent: 0,
+    };
+    heap.push(first_node.clone());
+    parents.push(first_node.clone());
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(Node { cost, xy, parent }) = heap.pop() {
         // Destination reached
         if xy == dest {
             path.push((xy.0 as u32, xy.1 as u32));
-            let mut prev = parent;
-            while let Some(curr) = prev {
-                path.push((curr.xy.0 as u32, curr.xy.1 as u32));
-                prev = curr.parent;
+            let mut prev = &parents[parent];
+            while *prev != first_node {
+                path.push((prev.xy.0 as u32, prev.xy.1 as u32));
+                prev = &parents[prev.parent];
             }
             return path;
         }
+
+        parents.push(Node { cost, xy, parent });
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
@@ -111,11 +115,7 @@ pub fn find_path(
                 let next = Node {
                     cost: new_cost,
                     xy: new,
-                    parent: Some(Box::new(Node {
-                        cost,
-                        xy,
-                        parent: parent.clone(),
-                    })),
+                    parent: parents.len() - 1,
                 };
 
                 // If so, add it to the frontier and continue
