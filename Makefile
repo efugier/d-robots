@@ -9,7 +9,7 @@ ROBOT_DIR=${ROOT_DIR}/robot
 
 QMAKE=qmake-qt5
 MAKE=make
-PROCESSUS=2
+PROCESSUS=4
 
 CARGO=$(shell which cargo)
 
@@ -18,12 +18,12 @@ all: buildSimu buildRobot
 
 buildSimu: buildDir
 	cd ${BUILD_DIR} && \
-	${QMAKE} ${SIMULATOR_DIR}/${SIMULATOR_PROJECT} "ROBOT_APP=\\\"${BUILD_DIR}/debug/robot\\\"" && \
+	${QMAKE} ${SIMULATOR_DIR}/${SIMULATOR_PROJECT} "ROBOT_APP=\\\"${BUILD_DIR}/release/robot\\\"" && \
 	${MAKE} -j${PROCESSUS}
 
 buildRobot: buildDir
 	echo "Cargo : ${CARGO}"
-	${CARGO} build --jobs ${PROCESSUS} --target-dir ${BUILD_DIR} --manifest-path ${ROBOT_DIR}/Cargo.toml
+	${CARGO} build --release --jobs ${PROCESSUS} --target-dir ${BUILD_DIR} --manifest-path ${ROBOT_DIR}/Cargo.toml
 
 buildDir:
 	mkdir -p ${BUILD_DIR}

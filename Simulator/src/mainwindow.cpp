@@ -102,7 +102,7 @@ void MainWindow::loadMap(const QString& filename)
                 std::cerr << rawPoint.toString().toStdString() << std::endl;
                 return;
             }
-            QPoint currentPoint = QPoint{static_cast<int>(point[KEY_X].toDouble() * 100), static_cast<int>(point[KEY_Y].toDouble() * 100)};
+            QPoint currentPoint = QPoint{static_cast<int>(point[KEY_X].toDouble() * 100), -static_cast<int>(point[KEY_Y].toDouble() * 100)};
             if (!firstPointDefined)
             {
                 firstPointDefined = true;
@@ -140,14 +140,14 @@ void MainWindow::updateRobotPosition(unsigned int id)
         {
             m_selectionShape->setVisible(true);
             m_selectionShape->setPos(robot->position().x() * 100 - m_selectionShape->rect().width()/2,
-                                     robot->position().y() * 100 - m_selectionShape->rect().height()/2);
+                                     -robot->position().y() * 100 - m_selectionShape->rect().height()/2);
         }
 
         robot->pixmapItem()->setX(robot->position().x() * 100 - ITEM_WIDTH/2);
-        robot->pixmapItem()->setY(robot->position().y() * 100 - ITEM_HEIGHT/2);
+        robot->pixmapItem()->setY(-robot->position().y() * 100 - ITEM_HEIGHT/2);
 
-        scene->addLine(QLine(robot->lastPosition().x() * 100, robot->lastPosition().y() * 100,
-                             robot->position().x() * 100, robot->position().y() * 100),
+        scene->addLine(QLine(robot->lastPosition().x() * 100, -robot->lastPosition().y() * 100,
+                             robot->position().x() * 100, -robot->position().y() * 100),
                        QPen(QColor(Qt::GlobalColor::gray)));
         robot->pixmapItem()->setToolTip(QString::fromStdString(id+" : "+std::to_string(robot->position().x())+","+std::to_string(robot->position().y())));
         view->fitInView(scene->sceneRect().x(),
@@ -160,7 +160,7 @@ void MainWindow::updateRobotPosition(unsigned int id)
 
 // Adds an object on the map
 void MainWindow::addObject(double x, double y){
-    QGraphicsRectItem *rect = scene->addRect(x,y,ITEM_WIDTH,ITEM_HEIGHT);
+    QGraphicsRectItem *rect = scene->addRect(x,-y,ITEM_WIDTH,ITEM_HEIGHT);
     rect->setToolTip(QString::fromStdString("Obstacle : "+std::to_string(x)+","+std::to_string(y)));
     view->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 }
@@ -185,7 +185,7 @@ void MainWindow::selectNextRobot()
     if (m_itrRobot == m_robotList->end())
         m_itrRobot = m_robotList->begin();
     m_selectionShape->setPos(m_itrRobot->second.position().x() * 100 - m_selectionShape->rect().width()/2,
-                             m_itrRobot->second.position().y() * 100 - m_selectionShape->rect().height()/2);
+                             -m_itrRobot->second.position().y() * 100 - m_selectionShape->rect().height()/2);
 }
 
 void MainWindow::selectPreviousRobot()
