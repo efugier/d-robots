@@ -155,6 +155,7 @@ impl AI {
                 let (x, y) = pos_to_pixels(target);
                 self.map_seen[(x as usize, y as usize)] = Blocked;
                 self.update(robot);
+                return;
             }
         } else {
             log::error!("nowhere to go from {:?}", pos_to_pixels(self_pos));
@@ -266,52 +267,57 @@ impl AI {
     /// around it (including diagonal directions).
     /// Note that points are converted back to "real" coordinates, not pixel coordinates.
     fn detect_frontiers(&self) -> impl Iterator<Item = Point> + '_ {
-        // let arr = Self::dilate(&self.map_seen, 5);
-        let arr = self.map_seen.clone();
+        let arr = Self::dilate(&self.map_seen, 4);
+        // let arr = self.map_seen.clone();
         self.map_seen
             .indexed_iter()
             .filter(move |(xy, _)| Self::is_frontier(&arr, *xy))
             .map(|((x, y), _)| pixels_to_pos((x as u32, y as u32)))
     }
 
-    fn dilate(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
-        // let prev = arr;
+    fn dilate(arr: &Array2<CellState>, iterations: u32) -> Array2<CellState> {
+        let mut prev = arr.clone(); // TODO find a way to avoid cloning here
         let mut new = arr.clone();
-        // for _ in 0..iterations {
-        for xy in iproduct!(size..new.rows() - size, 1..new.cols() - size) {
-            unsafe {
-                if arr[xy] == Uncharted {
+        const SIZE: usize = 1;
+        for _ in 0..iterations {
+            for xy in iproduct!(0..arr.rows() - SIZE, 0..arr.cols() - SIZE) {
+                if new[xy] == Uncharted {
+                    let mut uncharted = 0;
+                    let mut free = 0;
                     for n in iproduct!(
-                        xy.0.saturating_sub(size)..=(xy.0 + size),
-                        xy.1.saturating_sub(size)..=(xy.1 + size)
+                        xy.0.saturating_sub(SIZE)..=(xy.0 + SIZE).min(arr.rows() - 1),
+                        xy.1.saturating_sub(SIZE)..=(xy.1 + SIZE).min(arr.cols() - 1)
                     ) {
-                        if *arr.uget(n) == SeenFree {
-                            *new.uget_mut(xy) = SeenFree;
-                            break;
+                        if n == xy {
+                            continue;
                         }
+                        if new[n] == Uncharted {
+                            uncharted += 1;
+                        }
+                        if prev[n] == SeenFree {
+                            free += 1;
+                        }
+                    }
+                    if uncharted > 0 && free > 0 {
+                        new[xy] = SeenFree;
                     }
                 }
             }
+            prev = new;
+            new = prev.clone();
         }
         new
     }
 
     fn dilate_blocked(arr: &Array2<CellState>, size: usize) -> Array2<CellState> {
-        // let prev = arr;
         let mut new = arr.clone();
-        // for _ in 0..iterations {
-        for xy in iproduct!(size..new.rows() - size, 1..new.cols() - size) {
-            unsafe {
-                if arr[xy] != Blocked {
-                    for n in iproduct!(
-                        xy.0.saturating_sub(size)..=(xy.0 + size),
-                        xy.1.saturating_sub(size)..=(xy.1 + size)
-                    ) {
-                        if *arr.uget(n) == Blocked {
-                            *new.uget_mut(xy) = Blocked;
-                            break;
-                        }
-                    }
+        for xy in iproduct!(0..new.rows(), 0..new.cols()) {
+            if arr[xy] == Blocked {
+                for n in iproduct!(
+                    xy.0.saturating_sub(size)..=(xy.0 + size).min(arr.rows() - 1),
+                    xy.1.saturating_sub(size)..=(xy.1 + size).min(arr.cols() - 1)
+                ) {
+                    new[n] = Blocked;
                 }
             }
         }
