@@ -154,9 +154,11 @@ pub struct Segment(pub Point, pub Point);
 impl Segment {
     /// seg1 = p + r
     /// seg2 = q + s
-    /// intersection <=> exists t,u in [0, 1] such that
+    /// intersection <=> r.cross_prod(s) != 0 and exists t,u in [0, 1] such that
     /// p + tr = q + us
     /// where t = (q - p).cross_prod(s) / (r.cross_prod(s))
+    /// where u = (p - p).cross_prod(s) / (s.cross_prod(r))
+    ///         = (q - p).cross_prod(r) / (r.cross_prod(s))
     pub fn intersection(&self, other: &Segment) -> Option<Point> {
         // p = self.0
         // q = other.0
@@ -171,8 +173,7 @@ impl Segment {
         }
 
         let t = (other.0 - self.0).cross_prod(s) / r_vec_s;
-
-        let u = -(self.0 - other.0).cross_prod(r) / r_vec_s;
+        let u = (other.0 - self.0).cross_prod(r) / r_vec_s;
 
         // the segment does not intersect
         if t < 0. || t > 1. || u < 0. || u > 1. {
@@ -283,6 +284,7 @@ mod tests {
         let intersection = Point { x: 1., y: 1. };
 
         assert_eq!(Some(intersection), s1.intersection(&s2));
+        assert_eq!(Some(intersection), s2.intersection(&s1));
 
         // Test for parallel
         let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 2., y: 2. });
@@ -290,17 +292,21 @@ mod tests {
 
         assert_eq!(None, s1.intersection(&s2));
 
-        // Test for t > 1 (intersection not in segment)
+        // Intersection not in segment
         let s1 = Segment(Point { x: 0., y: 0. }, Point { x: 1., y: 1. });
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
 
+        // Test for t > 1
         assert_eq!(None, s1.intersection(&s2));
+        // Test for u > 1
+        assert_eq!(None, s2.intersection(&s1));
 
-        // Test for t < 0 (same but the other way)
+        // Test for t < 0 || u < 0 (same but the other way)
         let s1 = Segment(Point { x: 1., y: 1. }, Point { x: 0., y: 0. });
         let s2 = Segment(Point { x: 0., y: 2. }, Point { x: 2., y: 1. });
 
         assert_eq!(None, s1.intersection(&s2));
+        assert_eq!(None, s2.intersection(&s1));
     }
 
     #[test]
