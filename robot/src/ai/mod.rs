@@ -50,8 +50,8 @@ fn smooth_path(path: &[(u32, u32)]) -> Vec<(u32, u32)> {
             let a = pixels_to_pos(path[i - 1]);
             let b = pixels_to_pos(path[i]);
             let c = pixels_to_pos(path[i + 1]);
-            if ((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.98
-                && b.sq_dist(pixels_to_pos(*result.last().unwrap())) < 0.05
+            if ((c - a).normalized().dot_prod((b - a).normalized())).abs() < 0.99
+                || b.sq_dist(pixels_to_pos(*result.last().unwrap())) > 0.05
             {
                 result.push(path[i]);
             }
