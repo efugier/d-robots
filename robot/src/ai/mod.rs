@@ -352,9 +352,9 @@ impl AI {
 
     fn update_debug_image(&mut self) {
         self.debug_counter += 1;
-        if self.debug_counter % 2 != 0 {
-            return;
-        }
+        // if self.debug_counter % 2 != 0 {
+        //     return;
+        // }
 
         let mut img = RgbImage::new(MAP_WIDTH * PIXELS_PER_METER, MAP_HEIGHT * PIXELS_PER_METER);
 
